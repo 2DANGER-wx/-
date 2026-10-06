@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#05080f">
-<title>2DANGER — Live Weather Radar</title>
+<title>2DANGER</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2212%22 fill=%22%2303050a%22/%3E%3Ccircle cx=%2232%22 cy=%2232%22 r=%2224%22 fill=%22none%22 stroke=%22%2300aaff%22 stroke-width=%225%22/%3E%3Cpath d=%22M17 38C24 25 31 18 47 17%22 fill=%22none%22 stroke=%22%23ff173f%22 stroke-width=%227%22 stroke-linecap=%22round%22/%3E%3Ctext x=%2232%22 y=%2240%22 fill=%22%2300aaff%22 font-size=%2217%22 font-family=%22Arial%20Black,Arial%22 text-anchor=%22middle%22%3E2D%3C/text%3E%3C/svg%3E">
 
 <link rel="stylesheet"
@@ -3488,5 +3488,285 @@ setInterval(tick, 3000);
   }
 })();
 </script>
+
+<!-- ============================================================
+  2DANGER WINDOW SYSTEM + SCREEN-FIT UI
+  Draggable / closable radar controls, timeline, weather, and news.
+============================================================= -->
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const q=s=>document.querySelector(s);
+  const LS='2danger_windows_v1';
+  let state={
+    radar:true,
+    timeline:true,
+    weather:true,
+    news:true
+  };
+  try{ state={...state,...JSON.parse(localStorage.getItem(LS)||'{}')}; }catch(e){}
+  const save=()=>{try{localStorage.setItem(LS,JSON.stringify(state))}catch(e){}};
+
+  const css=document.createElement('style');
+  css.textContent=`
+    /* SCREEN FIT */
+    #app{min-width:0}
+    header{min-width:0}
+    nav{overflow-x:auto;scrollbar-width:none}
+    nav::-webkit-scrollbar{display:none}
+    .news-ticker{min-width:170px;max-width:430px;flex:1 1 260px}
+    .news-window{min-width:0}
+    .news-track{white-space:nowrap}
+    .actions{flex:0 0 auto}
+    @media(max-width:1200px){
+      header{gap:7px;padding:0 8px}
+      .brand{font-size:14px;letter-spacing:1px}
+      .live{display:none}
+      nav button{padding:0 8px;font-size:10px}
+      .news-ticker{max-width:300px;flex-basis:180px}
+      .news-label{font-size:8px;padding:0 6px}
+    }
+    @media(max-width:900px){
+      .brand{display:none}
+      .brand-logo{width:50px;height:42px}
+      nav button[data-mode="storm"],nav button[data-mode="tornado"]{display:none}
+      .news-ticker{max-width:180px}
+      .panel{width:245px}
+      .d2-weather-card{width:250px}
+    }
+    @media(max-width:640px){
+      nav button{padding:0 7px;font-size:9px}
+      .news-ticker{display:none}
+      .panel{width:calc(100vw - 16px);max-width:285px;max-height:52vh}
+      .bottom{left:8px;right:8px}
+      .d2-weather-card{left:8px;right:8px;width:auto}
+    }
+
+    /* WINDOW CHROME */
+    .d2-windowbar{
+      height:31px;display:flex;align-items:center;justify-content:space-between;gap:8px;
+      padding:0 8px 0 10px;border-bottom:1px solid #183650;
+      background:linear-gradient(90deg,rgba(0,170,255,.10),rgba(255,23,63,.09)),#07111c;
+      color:#c8d7e6;font-size:9px;font-weight:900;letter-spacing:1.3px;text-transform:uppercase;
+      cursor:grab;user-select:none;touch-action:none;
+    }
+    .d2-windowbar:active{cursor:grabbing}
+    .d2-window-tools{display:flex;gap:4px}
+    .d2-window-btn{width:24px!important;height:22px!important;padding:0!important;border-radius:5px!important;font-size:12px!important}
+    .d2-window-btn.close{color:#ff7187;border-color:#6e2535}
+    .d2-window-btn.close:hover{background:#3b0b17;border-color:#ff173f}
+    .d2-win{will-change:left,top;transition:none!important}
+    .d2-win.dragging{box-shadow:0 24px 70px #000c,0 0 0 1px rgba(0,170,255,.15);z-index:4900!important}
+    .d2-win-hidden{display:none!important}
+
+    /* Floating news mode */
+    .d2-floating-news{position:fixed!important;left:50%!important;top:70px!important;transform:translateX(-50%)!important;width:min(760px,92vw)!important;z-index:4800!important;
+      border:1px solid #183b5b!important;border-radius:10px!important;box-shadow:0 18px 50px #000b!important;background:#060c14!important;padding:3px!important}
+    .d2-floating-news .news-label{border-radius:7px}
+
+    /* WINDOW MANAGER */
+    .d2-wm{position:fixed;right:10px;top:66px;width:255px;z-index:5100;display:none;padding:11px;border:1px solid #1a4162;border-radius:13px;background:#07101a;box-shadow:0 24px 70px #000d;backdrop-filter:blur(14px)}
+    .d2-wm.show{display:block}
+    .d2-wm h4{margin:0 0 9px;font-size:11px;letter-spacing:2px}
+    .d2-wm-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border:1px solid #17324a;border-radius:8px;background:#06101a;margin:6px 0}
+    .d2-wm-row b{font-size:10px}.d2-wm-row span{font-size:9px;color:#8195a7}
+    .d2-wm-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+    #d2WindowsBtn{font-size:15px}
+
+    /* draggable cursor feedback */
+    .d2-draggable{cursor:default}
+    .d2-draggable .d2-windowbar{cursor:grab}
+
+    /* history bar title bar keeps it movable without changing playback controls */
+    .d2-timeline-tools{display:flex;align-items:center;gap:5px}
+  `;
+  document.head.appendChild(css);
+
+  function ensureWindow(el,title,key){
+    if(!el || el.dataset.d2WindowReady==='1') return;
+    el.dataset.d2WindowReady='1';
+    el.classList.add('d2-win','d2-draggable');
+    if(key==='radar') el.classList.add('d2-radar-window');
+    if(key==='timeline') el.classList.add('d2-timeline-window');
+    if(key==='weather') el.classList.add('d2-weather-window');
+    if(key==='news') el.classList.add('d2-news-window');
+
+    const bar=document.createElement('div');
+    bar.className='d2-windowbar';
+    bar.innerHTML=`<span>${title}</span><span class="d2-window-tools"><button class="d2-window-btn close" title="Close">×</button></span>`;
+    el.prepend(bar);
+    const close=bar.querySelector('.close');
+    close.onclick=(e)=>{e.stopPropagation();el.classList.add('d2-win-hidden');if(key==='radar')state.radar=false;if(key==='timeline')state.timeline=false;if(key==='weather')state.weather=false;if(key==='news')state.news=false;save();refreshWM();};
+
+    let drag=null;
+    bar.addEventListener('pointerdown',e=>{
+      if(e.target.closest('button'))return;
+      const rect=el.getBoundingClientRect();
+      if(getComputedStyle(el).position!=='fixed'){
+        el.style.position='fixed';
+        el.style.left=rect.left+'px';
+        el.style.top=rect.top+'px';
+        el.style.right='auto';
+        el.style.bottom='auto';
+        el.style.margin='0';
+      }
+      drag={x:e.clientX,y:e.clientY,left:parseFloat(el.style.left)||rect.left,top:parseFloat(el.style.top)||rect.top};
+      el.classList.add('dragging');
+      el.setPointerCapture?.(e.pointerId);
+    });
+    bar.addEventListener('pointermove',e=>{
+      if(!drag)return;
+      let left=drag.left+(e.clientX-drag.x);
+      let top=drag.top+(e.clientY-drag.y);
+      const r=el.getBoundingClientRect();
+      const maxL=Math.max(6,innerWidth-r.width-6);
+      const maxT=Math.max(58,innerHeight-r.height-6);
+      left=Math.max(6,Math.min(maxL,left));
+      top=Math.max(58,Math.min(maxT,top));
+      el.style.left=left+'px';
+      el.style.top=top+'px';
+    });
+    const end=()=>{if(drag){drag=null;el.classList.remove('dragging');}};
+    bar.addEventListener('pointerup',end);
+    bar.addEventListener('pointercancel',end);
+
+    requestAnimationFrame(()=>{
+      if(key==='radar' && state.radar===false) el.classList.add('d2-win-hidden');
+      if(key==='timeline' && state.timeline===false) el.classList.add('d2-win-hidden');
+      if(key==='weather' && state.weather===false) el.classList.add('d2-win-hidden');
+      if(key==='news' && state.news===false) el.classList.add('d2-win-hidden');
+    });
+  }
+
+  // Existing windows.
+  ensureWindow(q('.panel'),'RADAR CONTROLS','radar');
+  ensureWindow(q('.bottom'),'RADAR TIMELINE','timeline');
+  const weatherNow=q('.d2-weather-card');
+  if(weatherNow) ensureWindow(weatherNow,'CURRENT CONDITIONS','weather');
+
+  // The news ticker stays compact in the header but can be hidden; clicking NEWS also opens the full news modal.
+  const news=q('#newsWindow');
+  const newsTicker=q('.news-ticker');
+  if(news && newsTicker){
+    // Do not steal the header's layout; make the ticker a compact draggable strip when moved.
+    newsTicker.dataset.d2NewsReady='1';
+    if(state.news===false) newsTicker.classList.add('d2-win-hidden');
+  }
+
+  // Window manager button.
+  const actions=q('.actions');
+  if(actions && !$('d2WindowsBtn')){
+    const wb=document.createElement('button');
+    wb.id='d2WindowsBtn';
+    wb.className='icon';
+    wb.title='Window manager';
+    wb.textContent='▣';
+    actions.insertBefore(wb,actions.firstChild);
+    wb.onclick=()=>{ const m=$('d2WindowManager'); if(m)m.classList.toggle('show'); };
+  }
+
+  const wm=document.createElement('div');
+  wm.id='d2WindowManager';
+  wm.className='d2-wm';
+  wm.innerHTML=`<h4>WINDOWS</h4>
+    <div class="d2-wm-row" data-win="radar"><div><b>Radar Controls</b><span>Move / hide the editor</span></div><button>SHOW</button></div>
+    <div class="d2-wm-row" data-win="timeline"><div><b>Radar Timeline</b><span>History / playback</span></div><button>SHOW</button></div>
+    <div class="d2-wm-row" data-win="weather"><div><b>Current Conditions</b><span>Weather card</span></div><button>SHOW</button></div>
+    <div class="d2-wm-row" data-win="news"><div><b>Storm News</b><span>Top news ticker</span></div><button>SHOW</button></div>
+    <div class="d2-wm-actions"><button id="d2ResetLayout">RESET LAYOUT</button><button id="d2HideWindows">HIDE ALL</button></div>`;
+  document.body.appendChild(wm);
+
+  function getWin(key){
+    if(key==='radar')return q('.d2-radar-window');
+    if(key==='timeline')return q('.d2-timeline-window');
+    if(key==='weather')return q('.d2-weather-window');
+    if(key==='news')return q('.d2-news-window') || q('.news-ticker');
+  }
+  function showWin(key){
+    const el=getWin(key);if(!el)return;
+    el.classList.remove('d2-win-hidden');
+    if(key==='radar')state.radar=true;
+    if(key==='timeline')state.timeline=true;
+    if(key==='weather')state.weather=true;
+    if(key==='news')state.news=true;
+    if(key==='news')q('.news-ticker')?.classList.remove('d2-win-hidden');
+    save();
+    if(key==='weather')requestAnimationFrame(()=>{
+      const card=q('.d2-weather-card');if(card && card.dataset.d2WindowReady!=='1')ensureWindow(card,'CURRENT CONDITIONS','weather');
+    });
+    refreshWM();
+  }
+  function refreshWM(){
+    qsa('.d2-wm-row',wm).forEach(row=>{
+      const key=row.dataset.win;const el=getWin(key);const hidden=!el||el.classList.contains('d2-win-hidden');
+      const b=row.querySelector('button');if(b)b.textContent=hidden?'SHOW':'HIDE';
+    });
+  }
+  wm.querySelectorAll('.d2-wm-row').forEach(row=>{
+    row.querySelector('button').onclick=()=>{
+      const key=row.dataset.win;const el=getWin(key);
+      if(el && !el.classList.contains('d2-win-hidden')){
+        el.classList.add('d2-win-hidden');
+        if(key==='radar')state.radar=false;if(key==='timeline')state.timeline=false;if(key==='weather')state.weather=false;if(key==='news'){state.news=false;q('.news-ticker')?.classList.add('d2-win-hidden');}
+        save();refreshWM();
+      }else showWin(key);
+    };
+  });
+  $('d2ResetLayout').onclick=()=>{
+    const radar=q('.d2-radar-window'),timeline=q('.d2-timeline-window'),weather=q('.d2-weather-window');
+    if(radar){radar.style.position='absolute';radar.style.left='12px';radar.style.top='12px';radar.style.right='auto';radar.style.bottom='auto';}
+    if(timeline){timeline.style.position='absolute';timeline.style.left='12px';timeline.style.right='12px';timeline.style.bottom='12px';timeline.style.top='auto';}
+    if(weather){weather.style.position='absolute';weather.style.right='12px';weather.style.bottom='88px';weather.style.left='auto';weather.style.top='auto';}
+    [radar,timeline,weather].forEach(x=>x?.classList.remove('d2-win-hidden'));
+    q('.news-ticker')?.classList.remove('d2-win-hidden');
+    state={...state,radar:true,timeline:true,weather:true,news:true};save();refreshWM();
+    toast?.('2DANGER window layout reset.');
+  };
+  $('d2HideWindows').onclick=()=>{
+    [getWin('radar'),getWin('timeline'),getWin('weather')].forEach(x=>x?.classList.add('d2-win-hidden'));
+    q('.news-ticker')?.classList.add('d2-win-hidden');
+    state={...state,radar:false,timeline:false,weather:false,news:false};save();refreshWM();
+  };
+
+  // Hide the news strip while full-screen storm/alert/tornado/home overlays are being used,
+  // then restore it when the modal closes unless the user permanently hid it.
+  const overlay=q('.d2-overlay');
+  if(overlay && newsTicker){
+    const observer=new MutationObserver(()=>{
+      if(overlay.classList.contains('show')) newsTicker.classList.add('d2-win-hidden');
+      else if(state.news) newsTicker.classList.remove('d2-win-hidden');
+    });
+    observer.observe(overlay,{attributes:true,attributeFilter:['class']});
+  }
+
+  // Make the current-conditions card draggable/closable when it is created later.
+  const mo=new MutationObserver(()=>{
+    const card=q('.d2-weather-card');
+    if(card && card.dataset.d2WindowReady!=='1') ensureWindow(card,'CURRENT CONDITIONS','weather');
+  });
+  mo.observe(q('#workspace')||document.body,{childList:true,subtree:true});
+
+  // Clicking the news label toggles its visibility; useful on narrow screens.
+  const label=q('.news-label');
+  if(label)label.title='Click to hide or show news';
+  if(label)label.addEventListener('click',e=>{
+    e.stopPropagation();
+    const nt=q('.news-ticker');
+    if(!nt)return;
+    state.news=nt.classList.toggle('d2-win-hidden')===false;
+    save();refreshWM();
+  });
+
+  // Close the manager if clicking elsewhere.
+  document.addEventListener('pointerdown',e=>{
+    if($('d2WindowManager')?.classList.contains('show') && !e.target.closest('#d2WindowManager') && !e.target.closest('#d2WindowsBtn')){
+      $('d2WindowManager').classList.remove('show');
+    }
+  });
+
+  refreshWM();
+})();
+</script>
+
 </body>
 </html>
