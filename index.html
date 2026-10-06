@@ -4,621 +4,2204 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#05080f">
-<title>2DANGER</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<title>2DANGER — Live Weather Radar</title>
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
 :root{
   --black:#03050a;
+  --dark:#060b14;
+  --panel:rgba(5,10,19,.96);
+  --panel2:#091221;
   --blue:#00aaff;
   --blue2:#19d7ff;
   --red:#ff173f;
+  --red2:#ff3c5c;
   --white:#f4f8ff;
   --gray:#8d99aa;
+  --border:#18324d;
+  --glow-blue:rgba(0,170,255,.3);
+  --glow-red:rgba(255,23,63,.3);
 }
-*{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;background:var(--black);color:var(--white);font-family:Arial,Helvetica,sans-serif;overflow:hidden}
-body{background:radial-gradient(circle at 10% 0%,rgba(0,170,255,.09),transparent 25%),radial-gradient(circle at 90% 0%,rgba(255,23,63,.09),transparent 25%),#03050a}
-#app{height:100vh;display:grid;grid-template-rows:62px 1fr}
-header{display:flex;align-items:center;gap:13px;padding:0 13px;background:#05080e;border-bottom:1px solid #183b5b;z-index:1000}
-.brand-logo{width:61px;height:46px;flex:none}
-.brand{font-size:18px;font-weight:900;letter-spacing:2px;white-space:nowrap}
-.brand .two{color:var(--red)}.brand .danger{color:var(--blue2)}
-.live{display:flex;align-items:center;gap:7px;font-size:10px;color:#b8c4d3;letter-spacing:1px}
-.live-dot{width:8px;height:8px;border-radius:50%;background:#ff294d;animation:pulse 1.3s infinite}
-@keyframes pulse{50%{opacity:.45}}
-nav{display:flex;flex:1;gap:6px;min-width:0}
-button{border:1px solid #18324d;background:#07101c;color:#d9e5f2;border-radius:8px;height:35px;padding:0 12px;font-weight:800;font-size:11px;cursor:pointer}
-button:hover{border-color:var(--blue)}
-button.active{color:#fff;border-color:var(--blue);background:linear-gradient(135deg,rgba(0,170,255,.18),rgba(255,23,63,.1))}
-.actions{display:flex;gap:6px}
-.icon{width:37px;padding:0;font-size:16px}
-#workspace{position:relative;min-height:0}
-#map{position:absolute;inset:0;background:#050912}
-.leaflet-control-zoom{margin-right:10px!important;margin-top:72px!important}
-.leaflet-control-zoom a{background:#07101c!important;color:white!important;border-color:#18324d!important}
-.leaflet-control-attribution{background:rgba(0,3,8,.8)!important;color:#8090a0!important;font-size:9px!important}
-.leaflet-control-attribution a{color:#53caff!important}
-.panel{position:absolute;top:12px;left:12px;width:292px;max-height:calc(100% - 24px);overflow:auto;background:rgba(5,10,19,.96);border:1px solid #173b5b;border-radius:13px;z-index:900;box-shadow:0 16px 45px rgba(0,0,0,.64);backdrop-filter:blur(14px)}
-.section{padding:13px;border-bottom:1px solid #14293d}
-h3{margin:0 0 11px;color:#a9bbce;font-size:11px;letter-spacing:2px;text-transform:uppercase}
-.row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:9px 0}
-.label{font-size:12px;color:#e1eaf4}
-.small{color:var(--gray);font-size:10px}
-.toggle{width:41px;height:22px;padding:2px;border-radius:20px;background:#0a1522}
-.toggle i{display:block;width:16px;height:16px;border-radius:50%;background:#647284;transition:.17s}
-.toggle.on{background:rgba(0,170,255,.2);border-color:#239bd0}
-.toggle.on i{transform:translateX(17px);background:#25c8ff}
-input[type=range]{width:100%;accent-color:#149fe8}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
-.seg button{height:31px;font-size:10px;padding:0 4px}
-.seg button.active{border-color:var(--red)}
-.legend{height:11px;margin:9px 0 6px;border-radius:20px;background:linear-gradient(90deg,#00b7ff,#16e0ff 16%,#38ed7a 30%,#ffe348 46%,#ff9b29 61%,#ff3e30 75%,#ff174f 88%,#ff4df0)}
-.legend-labels{display:flex;justify-content:space-between;color:#7f91a3;font-size:9px}
-.status{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px;border:1px solid #17334c;border-radius:8px;background:#07101a}
-.notice{background:rgba(255,23,63,.07);border-left:2px solid var(--red);padding:10px;color:#bdc9d6;font-size:10px;line-height:1.5}
-.badges{position:absolute;top:12px;right:12px;z-index:900;display:flex;gap:7px}
-.badge{background:rgba(3,7,13,.94);border:1px solid #183b5b;border-radius:20px;padding:7px 11px;font-size:10px;color:#9eacbb}
-.badge b{color:#fff}
-.bottom{position:absolute;left:12px;right:12px;bottom:12px;z-index:900;background:rgba(5,9,16,.96);border:1px solid #183b5b;border-radius:13px;padding:11px 13px;backdrop-filter:blur(13px)}
-.bottom.hidden{display:none}
-.timeline-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px}
-.time{font-size:11px;color:#abb9c8}.time b{color:white}
-.timeline{position:relative;height:29px}
-.track{position:absolute;top:14px;left:0;right:0;height:3px;background:linear-gradient(90deg,#086ca2,#0e9fe7,#742337,#c8153c);border-radius:20px;opacity:.7}
-#scrub{position:absolute;top:3px;left:0;width:100%}
-#showHistory{display:none;position:absolute;left:12px;bottom:12px;z-index:901}
-#showHistory.visible{display:block}
-.splash{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;background:#000;transition:.5s}
-.splash.hide{opacity:0;visibility:hidden}
-.splash-card{text-align:center}
-.logo-large{width:min(80vw,530px);height:auto}
-.splash-text{margin-top:12px;color:#8594a6;font-size:12px;letter-spacing:5px}
-.loader{width:230px;height:3px;background:#101a25;border-radius:20px;margin:16px auto;overflow:hidden}
-.loader i{display:block;width:43%;height:100%;background:linear-gradient(90deg,#00aaff,#18d3ff,#ff1744);animation:load 1s infinite}
-@keyframes load{from{transform:translateX(-130%)}to{transform:translateX(310%)}}
-.toast{position:absolute;left:50%;bottom:98px;transform:translate(-50%,20px);opacity:0;background:#060b12;border:1px solid #1d4566;border-radius:8px;padding:9px 13px;font-size:11px;z-index:1200;transition:.2s}
-.toast.show{opacity:1;transform:translate(-50%,0)}
-.severe-list{max-height:230px;overflow:auto;margin-top:8px}
-.severe-item{display:block;width:100%;height:auto;min-height:48px;margin:6px 0;padding:8px 10px;text-align:left;border-color:#573044;background:#120b12}
-.severe-item strong{display:block;color:#fff;font-size:11px}
-.severe-item span{display:block;margin-top:4px;color:#b8aab2;font-size:10px}
-#sevBanner{position:absolute;top:12px;left:50%;transform:translate(-50%,-160%);z-index:1300;width:min(92vw,470px);padding:11px 14px;border-radius:12px;border:1px solid #ff3c5c;background:#16070b;box-shadow:0 0 28px rgba(255,23,63,.45);transition:transform .35s;pointer-events:none;opacity:0}
-#sevBanner.show{transform:translate(-50%,0);pointer-events:auto;opacity:1}
-#sevBanner b{display:block;font-size:13px;letter-spacing:2px}
-#sevBanner span{display:block;margin-top:4px;font-size:11px;color:#ffd3da}
-.sev-marker{width:24px;height:24px;border-radius:50%;background:rgba(255,23,63,.72);border:3px solid white;box-shadow:0 0 18px #ff173f}
+
+*{
+  box-sizing:border-box;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  background:var(--black);
+  color:var(--white);
+  font-family:Arial,Helvetica,sans-serif;
+  overflow:hidden;
+}
+
+body{
+  background:
+    radial-gradient(circle at 10% 0%,rgba(0,170,255,.09),transparent 25%),
+    radial-gradient(circle at 90% 0%,rgba(255,23,63,.09),transparent 25%),
+    #03050a;
+}
+
+#app{
+  height:100vh;
+  display:grid;
+  grid-template-rows:62px 1fr;
+}
+
+/* TOP BAR */
+
+header{
+  display:flex;
+  align-items:center;
+  gap:13px;
+  padding:0 13px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0,92,145,.15),
+      rgba(5,8,14,.96) 35%,
+      rgba(125,0,25,.15)
+    ),
+    #05080e;
+  border-bottom:1px solid #183b5b;
+  box-shadow:
+    0 1px 0 rgba(0,170,255,.12),
+    0 4px 20px rgba(0,0,0,.55);
+  z-index:1000;
+}
+
+.brand-logo{
+  width:61px;
+  height:46px;
+  flex:none;
+}
+
+.brand{
+  font-size:18px;
+  font-weight:900;
+  letter-spacing:2px;
+  white-space:nowrap;
+}
+
+.brand .two{
+  color:var(--red);
+  text-shadow:0 0 10px var(--glow-red);
+}
+
+.brand .danger{
+  color:var(--blue2);
+  text-shadow:0 0 10px var(--glow-blue);
+}
+
+.live{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  font-size:10px;
+  color:#b8c4d3;
+  letter-spacing:1px;
+}
+
+.live-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#ff294d;
+  box-shadow:0 0 12px #ff1744;
+  animation:pulse 1.3s infinite;
+}
+
+@keyframes pulse{
+  0%,100%{opacity:1}
+  50%{opacity:.45}
+}
+
+nav{
+  display:flex;
+  flex:1;
+  gap:6px;
+  min-width:0;
+}
+
+button{
+  border:1px solid #18324d;
+  background:#07101c;
+  color:#d9e5f2;
+  border-radius:8px;
+  height:35px;
+  padding:0 12px;
+  font-weight:800;
+  font-size:11px;
+  cursor:pointer;
+  transition:.16s;
+}
+
+button:hover{
+  border-color:var(--blue);
+  box-shadow:0 0 12px rgba(0,170,255,.15);
+}
+
+button.active{
+  color:#fff;
+  border-color:var(--blue);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(0,170,255,.18),
+      rgba(255,23,63,.10)
+    );
+  box-shadow:
+    inset 0 0 0 1px rgba(0,170,255,.1),
+    0 0 14px rgba(0,170,255,.08);
+}
+
+.actions{
+  display:flex;
+  gap:6px;
+}
+
+.icon{
+  width:37px;
+  padding:0;
+  font-size:16px;
+}
+
+/* MAP */
+
+#workspace{
+  position:relative;
+  min-height:0;
+}
+
+#map{
+  position:absolute;
+  inset:0;
+  background:#050912;
+}
+
+#map:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:400;
+  background:
+    radial-gradient(circle at center,
+      transparent 35%,
+      rgba(0,0,0,.15) 100%);
+}
+
+.leaflet-control-zoom{
+  margin-right:10px!important;
+  margin-top:72px!important;
+}
+
+.leaflet-control-zoom a{
+  background:#07101c!important;
+  color:white!important;
+  border-color:#18324d!important;
+}
+
+.leaflet-control-attribution{
+  background:rgba(0,3,8,.8)!important;
+  color:#8090a0!important;
+  font-size:9px!important;
+}
+
+.leaflet-control-attribution a{
+  color:#53caff!important;
+}
+
+/* LEFT PANEL */
+
+.panel{
+  position:absolute;
+  top:12px;
+  left:12px;
+  width:292px;
+  max-height:calc(100% - 24px);
+  overflow:auto;
+  background:
+    linear-gradient(
+      160deg,
+      rgba(0,105,175,.07),
+      transparent 38%,
+      rgba(255,20,60,.06)
+    ),
+    var(--panel);
+  border:1px solid #173b5b;
+  border-radius:13px;
+  z-index:900;
+  box-shadow:
+    0 16px 45px rgba(0,0,0,.64),
+    0 0 25px rgba(0,95,160,.08);
+  backdrop-filter:blur(14px);
+}
+
+.section{
+  padding:13px;
+  border-bottom:1px solid #14293d;
+}
+
+.section:last-child{
+  border-bottom:0;
+}
+
+h3{
+  margin:0 0 11px;
+  color:#a9bbce;
+  font-size:11px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+}
+
+.row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin:9px 0;
+}
+
+.label{
+  font-size:12px;
+  color:#e1eaf4;
+}
+
+.small{
+  color:var(--gray);
+  font-size:10px;
+}
+
+.toggle{
+  width:41px;
+  height:22px;
+  padding:2px;
+  border-radius:20px;
+  background:#0a1522;
+}
+
+.toggle i{
+  display:block;
+  width:16px;
+  height:16px;
+  border-radius:50%;
+  background:#647284;
+  transition:.17s;
+}
+
+.toggle.on{
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0,170,255,.23),
+      rgba(255,23,63,.23)
+    );
+  border-color:#239bd0;
+  box-shadow:
+    inset 0 0 8px rgba(0,170,255,.1);
+}
+
+.toggle.on i{
+  transform:translateX(17px);
+  background:#25c8ff;
+  box-shadow:0 0 9px rgba(0,170,255,.7);
+}
+
+input[type=range]{
+  width:100%;
+  accent-color:#149fe8;
+}
+
+.seg{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:5px;
+}
+
+.seg button{
+  height:31px;
+  font-size:10px;
+  padding:0 4px;
+}
+
+.seg button.active{
+  border-color:var(--red);
+  color:#fff;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(0,170,255,.15),
+      rgba(255,23,63,.2)
+    );
+}
+
+/* LEGEND */
+
+.legend{
+  height:11px;
+  margin:9px 0 6px;
+  border-radius:20px;
+  background:
+    linear-gradient(
+      90deg,
+      #00b7ff 0%,
+      #16e0ff 16%,
+      #38ed7a 30%,
+      #ffe348 46%,
+      #ff9b29 61%,
+      #ff3e30 75%,
+      #ff174f 88%,
+      #ff4df0 100%
+    );
+  box-shadow:
+    0 0 12px rgba(0,170,255,.18);
+}
+
+.legend-labels{
+  display:flex;
+  justify-content:space-between;
+  color:#7f91a3;
+  font-size:9px;
+}
+
+/* STATUS */
+
+.status{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:9px;
+  border:1px solid #17334c;
+  border-radius:8px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0,137,220,.08),
+      rgba(255,20,55,.07)
+    ),
+    #07101a;
+}
+
+/* NOTICE */
+
+.notice{
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,23,63,.08),
+      rgba(0,170,255,.04)
+    );
+  border-left:2px solid var(--red);
+  padding:10px;
+  color:#bdc9d6;
+  font-size:10px;
+  line-height:1.5;
+}
+
+/* BADGES */
+
+.badges{
+  position:absolute;
+  top:12px;
+  right:12px;
+  z-index:900;
+  display:flex;
+  gap:7px;
+}
+
+.badge{
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0,170,255,.08),
+      rgba(255,23,63,.08)
+    ),
+    rgba(3,7,13,.94);
+  border:1px solid #183b5b;
+  border-radius:20px;
+  padding:7px 11px;
+  font-size:10px;
+  color:#9eacbb;
+  box-shadow:0 7px 18px rgba(0,0,0,.3);
+}
+
+.badge b{
+  color:#fff;
+}
+
+/* BOTTOM */
+
+.bottom{
+  position:absolute;
+  left:12px;
+  right:12px;
+  bottom:12px;
+  z-index:900;
+  background:
+    linear-gradient(
+      100deg,
+      rgba(0,120,200,.07),
+      rgba(255,20,60,.07)
+    ),
+    rgba(5,9,16,.96);
+  border:1px solid #183b5b;
+  border-radius:13px;
+  padding:11px 13px;
+  box-shadow:
+    0 15px 45px rgba(0,0,0,.62),
+    0 0 25px rgba(0,120,200,.06);
+  backdrop-filter:blur(13px);
+}
+
+.timeline-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:9px;
+}
+
+.time{
+  font-size:11px;
+  color:#abb9c8;
+}
+
+.time b{
+  color:white;
+}
+
+.timeline{
+  position:relative;
+  height:29px;
+}
+
+.track{
+  position:absolute;
+  top:14px;
+  left:0;
+  right:0;
+  height:3px;
+  background:
+    linear-gradient(
+      90deg,
+      #086ca2,
+      #0e9fe7,
+      #742337,
+      #c8153c
+    );
+  border-radius:20px;
+  opacity:.7;
+}
+
+#scrub{
+  position:absolute;
+  top:3px;
+  left:0;
+  width:100%;
+}
+
+/* SPLASH */
+
+.splash{
+  position:fixed;
+  inset:0;
+  z-index:5000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:
+    radial-gradient(circle at 50% 50%,
+      rgba(0,115,190,.11),
+      transparent 35%),
+    radial-gradient(circle at 50% 60%,
+      rgba(255,20,55,.1),
+      transparent 45%),
+    #000;
+  transition:.5s;
+}
+
+.splash.hide{
+  opacity:0;
+  visibility:hidden;
+}
+
+.splash-card{
+  text-align:center;
+}
+
+.logo-large{
+  width:min(80vw,530px);
+  height:auto;
+  filter:
+    drop-shadow(0 0 16px rgba(0,170,255,.15))
+    drop-shadow(0 0 16px rgba(255,23,63,.15));
+}
+
+.splash-text{
+  margin-top:12px;
+  color:#8594a6;
+  font-size:12px;
+  letter-spacing:5px;
+}
+
+.loader{
+  width:230px;
+  height:3px;
+  background:#101a25;
+  border-radius:20px;
+  margin:16px auto;
+  overflow:hidden;
+}
+
+.loader i{
+  display:block;
+  width:43%;
+  height:100%;
+  background:
+    linear-gradient(
+      90deg,
+      #00aaff,
+      #18d3ff,
+      #ff1744
+    );
+  animation:load 1s infinite;
+}
+
+@keyframes load{
+  from{transform:translateX(-130%)}
+  to{transform:translateX(310%)}
+}
+
+/* TOAST */
+
+.toast{
+  position:absolute;
+  left:50%;
+  bottom:98px;
+  transform:translate(-50%,20px);
+  opacity:0;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(0,150,235,.12),
+      rgba(255,20,60,.12)
+    ),
+    #060b12;
+  border:1px solid #1d4566;
+  border-radius:8px;
+  padding:9px 13px;
+  font-size:11px;
+  z-index:1200;
+  transition:.2s;
+  box-shadow:0 7px 25px rgba(0,0,0,.5);
+}
+
+.toast.show{
+  opacity:1;
+  transform:translate(-50%,0);
+}
+
+/* MOBILE */
+
 @media(max-width:700px){
-  .brand,.live{display:none}
-  nav button:nth-child(n+4){display:none}
-  .panel{width:240px}
+
+  .brand,
+  .live{
+    display:none;
+  }
+
+  .panel{
+    width:240px;
+  }
+
+  nav button:nth-child(n+3){
+    display:none;
+  }
+
 }
+
 @media(max-width:500px){
-  #app{grid-template-rows:56px 1fr}
-  header{padding:0 8px;gap:6px}
-  .brand-logo{width:48px}
-  nav{gap:3px}
-  nav button{padding:0 7px;font-size:10px}
-  .actions{gap:3px}
-  .panel{left:8px;top:8px;width:calc(100% - 16px);max-height:43vh}
-  .badges{top:auto;right:8px;bottom:91px}
-  .bottom{left:8px;right:8px;bottom:8px}
-  #showHistory{left:8px;bottom:8px}
+
+  #app{
+    grid-template-rows:56px 1fr;
+  }
+
+  header{
+    padding:0 8px;
+  }
+
+  .brand-logo{
+    width:57px;
+  }
+
+  .panel{
+    left:8px;
+    top:8px;
+    width:calc(100% - 16px);
+    max-height:44vh;
+  }
+
+  .badges{
+    top:auto;
+    right:8px;
+    bottom:91px;
+  }
+
+  .bottom{
+    left:8px;
+    right:8px;
+    bottom:8px;
+  }
+
 }
 </style>
 </head>
 
 <body>
+
+<!-- SPLASH -->
 <div class="splash" id="splash">
-  <div class="splash-card">
-    <svg class="logo-large" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
-      <rect width="1000" height="1000" fill="#000"/>
-      <path d="M230 410C125 285 160 170 280 155C390 142 470 165 575 205C470 180 360 155 295 195C230 235 250 305 315 385L265 425Z" fill="#ff173f"/>
-      <path d="M205 420C120 310 130 205 215 150C285 105 390 120 475 145C370 105 275 100 205 135C110 185 110 315 190 420" fill="none" stroke="#00aaff" stroke-width="12"/>
-      <path d="M345 350L420 255L665 255C735 255 790 310 790 380L780 420" fill="none" stroke="#00aaff" stroke-width="14"/>
-      <path d="M300 610C420 710 570 805 740 805C850 805 900 745 800 650" fill="none" stroke="#ff173f" stroke-width="40"/>
-      <path d="M290 600C410 710 565 825 750 825C880 825 930 735 820 625" fill="none" stroke="#00aaff" stroke-width="9"/>
-      <text x="500" y="560" text-anchor="middle" fill="#00aaff" font-size="145" font-weight="900" font-family="Arial Black,Arial,sans-serif">DANGER</text>
-    </svg>
-    <div class="splash-text">LIVE WEATHER RADAR</div>
-    <div class="loader"><i></i></div>
-  </div>
+
+<div class="splash-card">
+
+<svg class="logo-large"
+viewBox="0 0 1000 1000"
+xmlns="http://www.w3.org/2000/svg">
+
+<rect width="1000" height="1000" fill="#000"/>
+
+<!-- RED OUTER SHAPE -->
+<path
+d="M230 410
+C125 285 160 170 280 155
+C390 142 470 165 575 205
+C470 180 360 155 295 195
+C230 235 250 305 315 385
+L265 425Z"
+fill="#ff173f"/>
+
+<!-- BLUE OUTLINE -->
+<path
+d="M205 420
+C120 310 130 205 215 150
+C285 105 390 120 475 145
+C370 105 275 100 205 135
+C110 185 110 315 190 420"
+fill="none"
+stroke="#00aaff"
+stroke-width="12"/>
+
+<!-- BLUE UPPER DETAIL -->
+<path
+d="M345 350
+L420 255
+L665 255
+C735 255 790 310 790 380
+L780 420"
+fill="none"
+stroke="#00aaff"
+stroke-width="14"/>
+
+<!-- RED LOWER ARC -->
+<path
+d="M300 610
+C420 710 570 805 740 805
+C850 805 900 745 800 650"
+fill="none"
+stroke="#ff173f"
+stroke-width="40"/>
+
+<!-- BLUE LOWER OUTLINE -->
+<path
+d="M290 600
+C410 710 565 825 750 825
+C880 825 930 735 820 625"
+fill="none"
+stroke="#00aaff"
+stroke-width="9"/>
+
+<!-- DANGER -->
+<text
+x="500"
+y="560"
+text-anchor="middle"
+fill="#00aaff"
+font-size="145"
+font-weight="900"
+font-family="Arial Black,Arial,sans-serif">
+DANGER
+</text>
+
+</svg>
+
+<div class="splash-text">
+LIVE WEATHER RADAR
 </div>
+
+<div class="loader">
+<i></i>
+</div>
+
+</div>
+</div>
+
 
 <div id="app">
+
+
 <header>
-  <svg class="brand-logo" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
-    <rect width="1000" height="1000" fill="#000"/>
-    <path d="M230 410C125 285 160 170 280 155C390 142 470 165 575 205C470 180 360 155 295 195C230 235 250 305 315 385L265 425Z" fill="#ff173f"/>
-    <path d="M205 420C120 310 130 205 215 150C285 105 390 120 475 145C370 105 275 100 205 135C110 185 110 315 190 420" fill="none" stroke="#00aaff" stroke-width="12"/>
-    <path d="M345 350L420 255L665 255C735 255 790 310 790 380L780 420" fill="none" stroke="#00aaff" stroke-width="14"/>
-    <path d="M300 610C420 710 570 805 740 805C850 805 900 745 800 650" fill="none" stroke="#ff173f" stroke-width="40"/>
-    <text x="500" y="560" text-anchor="middle" fill="#00aaff" font-size="145" font-weight="900" font-family="Arial Black,Arial,sans-serif">DANGER</text>
-  </svg>
 
-  <div class="brand"><span class="two">2</span><span class="danger">DANGER</span></div>
-  <div class="live"><i class="live-dot"></i>LIVE</div>
+<!-- SMALL LOGO -->
+<svg class="brand-logo"
+viewBox="0 0 1000 1000"
+xmlns="http://www.w3.org/2000/svg">
 
-  <nav>
-    <button class="active" data-mode="radar">Radar</button>
-    <button data-mode="satellite">Aerial</button>
-    <button data-mode="alerts">Alerts</button>
-    <button data-mode="reports">Storm Reports</button>
-    <button data-mode="tornado">Tornado Reports</button>
-  </nav>
+<rect width="1000" height="1000" fill="#000"/>
 
-  <div class="actions">
-    <button class="icon" id="locateBtn" title="Locate me">⌖</button>
-    <button class="icon" id="refreshBtn" title="Refresh radar">↻</button>
-  </div>
+<path
+d="M230 410C125 285 160 170 280 155C390 142 470 165 575 205C470 180 360 155 295 195C230 235 250 305 315 385L265 425Z"
+fill="#ff173f"/>
+
+<path
+d="M205 420C120 310 130 205 215 150C285 105 390 120 475 145C370 105 275 100 205 135C110 185 110 315 190 420"
+fill="none"
+stroke="#00aaff"
+stroke-width="12"/>
+
+<path
+d="M345 350L420 255L665 255C735 255 790 310 790 380L780 420"
+fill="none"
+stroke="#00aaff"
+stroke-width="14"/>
+
+<path
+d="M300 610C420 710 570 805 740 805C850 805 900 745 800 650"
+fill="none"
+stroke="#ff173f"
+stroke-width="40"/>
+
+<text
+x="500"
+y="560"
+text-anchor="middle"
+fill="#00aaff"
+font-size="145"
+font-weight="900"
+font-family="Arial Black,Arial,sans-serif">
+DANGER
+</text>
+
+</svg>
+
+
+<div class="brand">
+<span class="two">2</span><span class="danger">DANGER</span>
+</div>
+
+
+<div class="live">
+<i class="live-dot"></i>
+LIVE
+</div>
+
+
+<nav>
+
+<button
+class="active"
+data-mode="radar">
+Radar
+</button>
+
+<button data-mode="sat">
+Satellite
+</button>
+
+<button data-mode="alerts">
+Alerts
+</button>
+
+<button data-mode="storm">
+Storm Reports
+</button>
+
+</nav>
+
+
+<div class="actions">
+
+<button
+class="icon"
+id="locateBtn">
+⌖
+</button>
+
+<button
+class="icon"
+id="refreshBtn">
+↻
+</button>
+
+</div>
+
 </header>
 
+
 <div id="workspace">
-  <div id="map"></div>
 
-  <aside class="panel">
-    <section class="section">
-      <h3>Radar</h3>
-      <div class="row"><span class="label">Live radar</span><button class="toggle on" id="radarToggle"><i></i></button></div>
-      <div class="row"><span class="label">Opacity</span><span class="small" id="opacityText">85%</span></div>
-      <input id="opacity" type="range" min="0" max="100" value="85">
-      <div class="row"><span class="label">Frame</span><span class="small" id="frameText">latest</span></div>
-      <div class="seg">
-        <button class="active" data-frame="latest">Latest</button>
-        <button data-frame="older">-10 min</button>
-        <button data-frame="oldest">-20 min</button>
-      </div>
-    </section>
+<div id="map"></div>
 
-    <section class="section">
-      <h3>Map</h3>
-      <div class="row"><span class="label">Dark map</span><button class="toggle on" id="darkToggle"><i></i></button></div>
-      <div class="row"><span class="label">Follow location</span><button class="toggle" id="followToggle"><i></i></button></div>
-    </section>
 
-    <section class="section">
-      <h3>Radar Legend</h3>
-      <div class="legend"></div>
-      <div class="legend-labels"><span>Light</span><span>Moderate</span><span>Heavy</span><span>Extreme</span></div>
-    </section>
+<!-- LEFT PANEL -->
 
-    <section class="section">
-      <div class="status"><b id="radarStatus">Connecting…</b><span class="small" id="updatedText">—</span></div>
-    </section>
+<aside class="panel">
 
-    <section class="section">
-      <h3>Wind</h3>
-      <div class="status"><b>Wind speed unavailable</b></div>
-      <div class="small" style="margin-top:8px;line-height:1.5">Radar reflectivity colors do not measure wind speed.</div>
-    </section>
+<section class="section">
 
-    <section class="section">
-      <div class="notice">Radar and storm reports may be delayed or unavailable. Reports are not live storm detection. For warnings and life-safety decisions, use official National Weather Service alerts.</div>
-    </section>
+<h3>Radar</h3>
 
-    <section class="section">
-      <h3>5 Most Recent Storm Reports</h3>
-      <div class="row">
-        <span class="label">Available reports</span>
-        <span class="small" id="stormCount">Loading…</span>
-      </div>
-      <div class="small" id="stormListStatus">Loading recent reports…</div>
-      <div class="severe-list" id="severeList"></div>
-    </section>
-  </aside>
+<div class="row">
 
-  <div class="badges">
-    <div class="badge">MODE <b id="modeBadge">RADAR</b></div>
-  </div>
+<span class="label">
+Live radar
+</span>
 
-  <div class="toast" id="toast"></div>
+<button
+class="toggle on"
+id="radarToggle">
 
-  <div class="bottom" id="historyBar">
-    <div class="timeline-head">
-      <div class="time">RADAR HISTORY · <b id="timelineTime">Loading…</b></div>
-      <div>
-        <button id="playBtn">▶ Play</button>
-        <button id="latestBtn">Live</button>
-        <button id="hideHistoryBtn">Hide history</button>
-      </div>
-    </div>
-    <div class="timeline">
-      <div class="track"></div>
-      <input id="scrub" type="range" min="0" max="0" value="0">
-    </div>
-  </div>
+<i></i>
 
-  <button id="showHistory" type="button">Show history</button>
+</button>
 
-  <div id="sevBanner" role="alert">
-    <b id="sevTitle"></b>
-    <span id="sevSub"></span>
-  </div>
+</div>
+
+
+<div class="row">
+
+<span class="label">
+Opacity
+</span>
+
+<span
+class="small"
+id="opacityText">
+85%
+</span>
+
+</div>
+
+
+<input
+id="opacity"
+type="range"
+min="0"
+max="100"
+value="85">
+
+
+<div class="row">
+
+<span class="label">
+Frame
+</span>
+
+<span
+class="small"
+id="frameText">
+latest
+</span>
+
+</div>
+
+
+<div class="seg">
+
+<button
+class="active"
+data-frame="latest">
+Latest
+</button>
+
+<button
+data-frame="older">
+-10 min
+</button>
+
+<button
+data-frame="oldest">
+-20 min
+</button>
+
+</div>
+
+</section>
+
+
+<section class="section">
+
+<h3>Map</h3>
+
+<div class="row">
+
+<span class="label">
+Dark map
+</span>
+
+<button
+class="toggle on"
+id="darkToggle">
+
+<i></i>
+
+</button>
+
+</div>
+
+
+<div class="row">
+
+<span class="label">
+Follow location
+</span>
+
+<button
+class="toggle"
+id="followToggle">
+
+<i></i>
+
+</button>
+
+</div>
+
+</section>
+
+
+<section class="section">
+
+<h3>Radar Legend</h3>
+
+<div class="legend"></div>
+
+<div class="legend-labels">
+
+<span>Light</span>
+<span>Moderate</span>
+<span>Heavy</span>
+<span>Extreme</span>
+
+</div>
+
+</section>
+
+
+<section class="section">
+
+<div class="status">
+
+<b id="radarStatus">
+Connecting...
+</b>
+
+<span
+class="small"
+id="updatedText">
+—
+</span>
+
+</div>
+
+</section>
+
+
+<section class="section">
+
+<div class="notice">
+
+2DANGER radar visualization.
+Radar data may be delayed or unavailable.
+For warnings and life-safety decisions,
+use official National Weather Service alerts.
+
+</div>
+
+</section>
+
+</aside>
+
+
+<!-- MAP BADGES -->
+
+<div class="badges">
+
+<div class="badge">
+SOURCE <b>RainViewer</b>
+</div>
+
+<div class="badge">
+MODE <b id="modeBadge">RADAR</b>
+</div>
+
+</div>
+
+
+<div
+class="toast"
+id="toast">
+</div>
+
+
+<!-- TIMELINE -->
+
+<div class="bottom">
+
+<div class="timeline-head">
+
+<div class="time">
+
+RADAR TIMELINE ·
+
+<b id="timelineTime">
+Loading...
+</b>
+
+</div>
+
+
+<div>
+
+<button id="playBtn">
+▶ Play
+</button>
+
+<button id="latestBtn">
+Live
+</button>
+
+</div>
+
+</div>
+
+
+<div class="timeline">
+
+<div class="track"></div>
+
+<input
+id="scrub"
+type="range"
+min="0"
+max="0"
+value="0">
+
+</div>
+
+</div>
+
+
 </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script
+src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+</script>
+
+
 <script>
-"use strict";
 
-const map = L.map("map",{zoomControl:true,minZoom:3,maxZoom:8}).setView([39.5,-98.35],4);
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
-  attribution:"© OpenStreetMap contributors",
-  maxZoom:19
-}).addTo(map);
+let radarHost =
+"https://tilecache.rainviewer.com";
 
-const satelliteLayer = L.tileLayer(
-  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-  {attribution:"Tiles © Esri",maxZoom:19}
-);
-const labelsLayer = L.tileLayer(
-  "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
-  {attribution:"© CARTO",maxZoom:19,opacity:.8}
-);
-
-let radarHost = "https://tilecache.rainviewer.com";
 let radarFrames = [];
 let radarLayer = null;
 let selectedIndex = 0;
 let playing = false;
 let playTimer = null;
-let activeMode = "radar";
-let stormMarkers = [];
-let severeMarker = null;
-let alertAudio = null;
 
-const $ = id => document.getElementById(id);
 
-function toast(message){
-  const box = $("toast");
-  box.textContent = message;
-  box.classList.add("show");
-  clearTimeout(toast.timer);
-  toast.timer = setTimeout(()=>box.classList.remove("show"),2600);
+/* MAP */
+
+const map =
+L.map("map",{
+  zoomControl:true,
+  minZoom:3,
+  maxZoom:8
+}).setView(
+  [39.5,-98.35],
+  4
+);
+
+
+L.tileLayer(
+  "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {
+    attribution:"© OpenStreetMap contributors",
+    maxZoom:19
+  }
+).addTo(map);
+
+
+/* ELEMENTS */
+
+const splash =
+document.getElementById("splash");
+
+const radarToggle =
+document.getElementById("radarToggle");
+
+const opacity =
+document.getElementById("opacity");
+
+const opacityText =
+document.getElementById("opacityText");
+
+const radarStatus =
+document.getElementById("radarStatus");
+
+const updatedText =
+document.getElementById("updatedText");
+
+const frameText =
+document.getElementById("frameText");
+
+const scrub =
+document.getElementById("scrub");
+
+const timelineTime =
+document.getElementById("timelineTime");
+
+const toastBox =
+document.getElementById("toast");
+
+
+/* TOAST */
+
+function toast(text){
+
+  toastBox.textContent = text;
+
+  toastBox.classList.add("show");
+
+  setTimeout(()=>{
+    toastBox.classList.remove("show");
+  },2200);
+
 }
 
-function formatTime(seconds){
-  return new Date(seconds*1000).toLocaleString([],{
-    month:"short",day:"numeric",hour:"numeric",minute:"2-digit"
-  });
+
+/* FORMAT TIME */
+
+function formatTime(ts){
+
+  return new Date(ts * 1000)
+    .toLocaleString([],{
+      month:"short",
+      day:"numeric",
+      hour:"numeric",
+      minute:"2-digit"
+    });
+
 }
+
+
+/* LOAD LIVE RADAR */
 
 async function loadRadar(){
-  $("radarStatus").textContent = "Connecting…";
+
+  radarStatus.textContent =
+    "Connecting...";
 
   try{
-    const response = await fetch("https://api.rainviewer.com/public/weather-maps.json",{cache:"no-store"});
-    if(!response.ok) throw new Error("Radar feed unavailable");
 
-    const data = await response.json();
-    radarHost = data.host || "https://tilecache.rainviewer.com";
-    radarFrames = (data.radar?.past || []).slice(-13);
-    if(!radarFrames.length) throw new Error("No radar frames");
+    const response =
+      await fetch(
+        "https://api.rainviewer.com/public/weather-maps.json",
+        {
+          cache:"no-store"
+        }
+      );
 
-    selectedIndex = radarFrames.length-1;
-    $("scrub").max = String(radarFrames.length-1);
+    if(!response.ok)
+      throw new Error("Radar unavailable");
+
+    const data =
+      await response.json();
+
+
+    radarHost =
+      data.host ||
+      "https://tilecache.rainviewer.com";
+
+
+    radarFrames =
+      (data.radar?.past || [])
+      .slice(-13);
+
+
+    if(!radarFrames.length)
+      throw new Error("No radar frames");
+
+
+    selectedIndex =
+      radarFrames.length - 1;
+
+
+    scrub.max =
+      radarFrames.length - 1;
+
+
     renderRadar();
 
-    $("radarStatus").textContent = "Radar live";
-    $("radarStatus").style.color = "#54e9ff";
+
+    radarStatus.textContent =
+      "Radar live";
+
+    radarStatus.style.color =
+      "#54e9ff";
+
+
   }catch(error){
+
     console.error(error);
-    $("radarStatus").textContent = "Radar unavailable";
-    $("radarStatus").style.color = "#ff637e";
-    toast("Radar could not load. Check your connection and refresh.");
-  }finally{
-    setTimeout(()=>$("splash").classList.add("hide"),500);
+
+    radarStatus.textContent =
+      "Radar unavailable";
+
+    radarStatus.style.color =
+      "#ff637e";
+
+    toast(
+      "Live radar could not be loaded."
+    );
+
   }
+
+
+  setTimeout(()=>{
+    splash.classList.add("hide");
+  },600);
+
 }
+
+
+/* DRAW RADAR */
 
 function renderRadar(){
-  if(!radarFrames.length) return;
 
-  const frame = radarFrames[selectedIndex];
-  const url = radarHost + frame.path + "/256/{z}/{x}/{y}/2/1_1.png";
+  if(!radarFrames.length)
+    return;
 
-  if(radarLayer && map.hasLayer(radarLayer)) map.removeLayer(radarLayer);
-  radarLayer = L.tileLayer(url,{
-    opacity:Number($("opacity").value)/100,
-    maxNativeZoom:7,maxZoom:8,zIndex:300
-  });
 
-  if(activeMode==="radar" && $("radarToggle").classList.contains("on")) radarLayer.addTo(map);
+  const frame =
+    radarFrames[selectedIndex];
 
-  const age = radarFrames.length-1-selectedIndex;
-  $("frameText").textContent = age===0 ? "latest" : "-"+age*10+" min";
-  $("timelineTime").textContent = formatTime(frame.time);
-  $("updatedText").textContent = formatTime(frame.time);
-  $("scrub").value = String(selectedIndex);
+
+  const url =
+    radarHost +
+    frame.path +
+    "/256/{z}/{x}/{y}/2/1_1.png";
+
+
+  if(radarLayer)
+    map.removeLayer(radarLayer);
+
+
+  radarLayer =
+    L.tileLayer(
+      url,
+      {
+        opacity:
+          Number(opacity.value)/100,
+
+        maxNativeZoom:7,
+        maxZoom:8,
+
+        zIndex:300
+      }
+    );
+
+
+  if(
+    radarToggle.classList
+      .contains("on")
+  ){
+
+    radarLayer.addTo(map);
+
+  }
+
+
+  const age =
+    radarFrames.length -
+    1 -
+    selectedIndex;
+
+
+  frameText.textContent =
+    age === 0
+      ? "latest"
+      : "-" + age*10 + " min";
+
+
+  timelineTime.textContent =
+    formatTime(frame.time);
+
+
+  updatedText.textContent =
+    formatTime(frame.time);
+
+
+  scrub.value =
+    selectedIndex;
+
 }
 
-$("radarToggle").addEventListener("click",()=>{
-  const button=$("radarToggle");
-  const enabled=!button.classList.contains("on");
-  button.classList.toggle("on",enabled);
-  if(!radarLayer)return;
-  if(enabled&&activeMode==="radar")radarLayer.addTo(map);
-  else if(map.hasLayer(radarLayer))map.removeLayer(radarLayer);
-});
 
-$("opacity").addEventListener("input",()=>{
-  $("opacityText").textContent=$("opacity").value+"%";
-  if(radarLayer)radarLayer.setOpacity(Number($("opacity").value)/100);
-});
+/* RADAR TOGGLE */
 
-$("scrub").addEventListener("input",()=>{
-  selectedIndex=Number($("scrub").value);
+radarToggle.onclick = ()=>{
+
+  const enabled =
+    !radarToggle.classList.contains("on");
+
+
+  radarToggle.classList
+    .toggle("on",enabled);
+
+
+  if(!radarLayer)
+    return;
+
+
+  if(enabled)
+    radarLayer.addTo(map);
+  else
+    map.removeLayer(radarLayer);
+
+};
+
+
+/* OPACITY */
+
+opacity.oninput = ()=>{
+
+  opacityText.textContent =
+    opacity.value + "%";
+
+
+  if(radarLayer)
+    radarLayer.setOpacity(
+      Number(opacity.value)/100
+    );
+
+};
+
+
+/* TIMELINE */
+
+scrub.oninput = ()=>{
+
+  selectedIndex =
+    Number(scrub.value);
+
   renderRadar();
-});
 
-document.querySelectorAll("[data-frame]").forEach(button=>{
-  button.addEventListener("click",()=>{
-    document.querySelectorAll("[data-frame]").forEach(item=>item.classList.remove("active"));
+};
+
+
+/* FRAME BUTTONS */
+
+document
+.querySelectorAll("[data-frame]")
+.forEach(button=>{
+
+  button.onclick = ()=>{
+
+    document
+    .querySelectorAll("[data-frame]")
+    .forEach(b=>{
+      b.classList.remove("active");
+    });
+
+
     button.classList.add("active");
-    if(!radarFrames.length)return;
-    if(button.dataset.frame==="latest")selectedIndex=radarFrames.length-1;
-    if(button.dataset.frame==="older")selectedIndex=Math.max(0,radarFrames.length-2);
-    if(button.dataset.frame==="oldest")selectedIndex=Math.max(0,radarFrames.length-3);
-    renderRadar();
-  });
-});
 
-$("playBtn").addEventListener("click",()=>{
-  if(!radarFrames.length)return;
-  playing=!playing;
-  $("playBtn").textContent=playing?"❚❚ Pause":"▶ Play";
-  clearInterval(playTimer);
-  if(!playing)return;
 
-  let index=Math.max(0,radarFrames.length-8);
-  selectedIndex=index;
-  renderRadar();
-
-  playTimer=setInterval(()=>{
-    index++;
-    if(index>=radarFrames.length)index=Math.max(0,radarFrames.length-8);
-    selectedIndex=index;
-    renderRadar();
-  },700);
-});
-
-$("latestBtn").addEventListener("click",()=>{
-  if(!radarFrames.length)return;
-  selectedIndex=radarFrames.length-1;
-  renderRadar();
-});
-
-$("hideHistoryBtn").addEventListener("click",()=>{
-  $("historyBar").classList.add("hidden");
-  $("showHistory").classList.add("visible");
-});
-$("showHistory").addEventListener("click",()=>{
-  $("historyBar").classList.remove("hidden");
-  $("showHistory").classList.remove("visible");
-});
-$("refreshBtn").addEventListener("click",loadRadar);
-
-$("locateBtn").addEventListener("click",()=>{
-  if(!navigator.geolocation){toast("Location is unavailable in this browser.");return;}
-  navigator.geolocation.getCurrentPosition(position=>{
-    const lat=position.coords.latitude,lon=position.coords.longitude;
-    L.circleMarker([lat,lon],{radius:7,color:"#fff",weight:2,fillColor:"#00aaff",fillOpacity:1}).addTo(map);
-    L.circle([lat,lon],{radius:position.coords.accuracy,color:"#00aaff",weight:1,fill:false}).addTo(map);
-    map.setView([lat,lon],Math.max(map.getZoom(),6),{animate:true});
-    toast("Centered on your location.");
-  },()=>toast("Location permission denied or unavailable."),{enableHighAccuracy:true,timeout:8000,maximumAge:120000});
-});
-
-$("darkToggle").addEventListener("click",()=>{
-  const button=$("darkToggle");
-  const enabled=!button.classList.contains("on");
-  button.classList.toggle("on",enabled);
-  $("map").style.filter=enabled?"brightness(.58) saturate(.9) contrast(1.05)":"none";
-});
-
-$("followToggle").addEventListener("click",()=>{
-  $("followToggle").classList.toggle("on");
-  if($("followToggle").classList.contains("on"))$("locateBtn").click();
-});
-
-/* Five most recent dated storm reports, newest first. */
-function parseReportTime(properties){
-  const raw=properties.BEGIN_DATE||properties.UTC_DATETIME||properties.DATE||properties.BEGIN_TIME||properties.ISSUED||"";
-  if(typeof raw==="number")return raw>1e12?raw:raw*1000;
-  const parsed=Date.parse(raw);
-  return Number.isFinite(parsed)?parsed:0;
-}
-function reportType(properties){
-  return String(properties.EVENT_TYPE||properties.TYPE||properties.EVENT||properties.REPORT_TYPE||"Storm report");
-}
-function reportCoordinates(feature){
-  const coordinates=feature.geometry?.coordinates;
-  if(feature.geometry?.type!=="Point"||!Array.isArray(coordinates))return null;
-  return [coordinates[1],coordinates[0]];
-}
-function safeText(value){
-  return String(value??"").replace(/[&<>"']/g,character=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[character]));
-}
-function playClickAlert(){
-  try{
-    const AudioContextClass=window.AudioContext||window.webkitAudioContext;
-    if(!AudioContextClass)return;
-    alertAudio=alertAudio||new AudioContextClass();
-    if(alertAudio.state==="suspended")alertAudio.resume();
-
-    const now=alertAudio.currentTime;
-    const oscillator=alertAudio.createOscillator();
-    const gain=alertAudio.createGain();
-    oscillator.type="sawtooth";
-    oscillator.frequency.setValueAtTime(880,now);
-    oscillator.frequency.setValueAtTime(660,now+.3);
-    gain.gain.setValueAtTime(.0001,now);
-    gain.gain.exponentialRampToValueAtTime(.12,now+.04);
-    gain.gain.setValueAtTime(.12,now+.55);
-    gain.gain.exponentialRampToValueAtTime(.0001,now+.7);
-    oscillator.connect(gain);
-    gain.connect(alertAudio.destination);
-    oscillator.start(now);
-    oscillator.stop(now+.75);
-  }catch(error){console.warn("Alert sound unavailable:",error);}
-}
-function showStormEvent(event){
-  playClickAlert();
-  if(severeMarker)map.removeLayer(severeMarker);
-
-  severeMarker=L.marker(event.latlng,{
-    icon:L.divIcon({className:"",html:'<div class="sev-marker"></div>',iconSize:[24,24],iconAnchor:[12,12]})
-  }).addTo(map);
-
-  map.flyTo(event.latlng,Math.max(map.getZoom(),7),{duration:1.25});
-  severeMarker.bindPopup(
-    `<b>${safeText(event.type)}</b><br>${safeText(event.timeText)}<br><small>Reported event; not a live warning.</small>`
-  ).openPopup();
-
-  $("sevTitle").textContent="⚠ REPORTED STORM";
-  $("sevSub").textContent=`${event.type} · ${event.timeText}`;
-  $("sevBanner").classList.add("show");
-  clearTimeout(showStormEvent.timer);
-  showStormEvent.timer=setTimeout(()=>$("sevBanner").classList.remove("show"),7000);
-}
-async function loadSevereStorms(){
-  const list=$("severeList");
-  list.replaceChildren();
-  $("stormCount").textContent="…";
-  $("stormListStatus").textContent="Loading recent reports…";
-
-  try{
-    const url="https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/Storm_Reports/FeatureServer/0/query?where=1%3D1&outFields=*&returnGeometry=true&f=geojson&resultRecordCount=500";
-    const response=await fetch(url);
-    if(!response.ok)throw new Error("Storm report service unavailable");
-
-    const data=await response.json();
-    const events=(data.features||[]).map(feature=>{
-      const properties=feature.properties||{};
-      const latlng=reportCoordinates(feature);
-      const timestamp=parseReportTime(properties);
-      if(!latlng||!timestamp)return null;
-      return {
-        latlng,timestamp,
-        type:reportType(properties),
-        timeText:new Date(timestamp).toLocaleString([],{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})
-      };
-    }).filter(Boolean).sort((a,b)=>b.timestamp-a.timestamp).slice(0,5);
-
-    $("stormCount").textContent=String(events.length);
-    if(!events.length){
-      $("stormListStatus").textContent="No recent dated reports were returned.";
+    if(!radarFrames.length)
       return;
+
+
+    if(
+      button.dataset.frame ===
+      "latest"
+    ){
+
+      selectedIndex =
+        radarFrames.length - 1;
+
     }
 
-    $("stormListStatus").textContent="Newest first · click a report to sound the alarm and go to its location.";
-    const fragment=document.createDocumentFragment();
 
-    events.forEach(event=>{
-      const button=document.createElement("button");
-      button.className="severe-item";
-      button.type="button";
-      const title=document.createElement("strong");
-      title.textContent=event.type;
-      const details=document.createElement("span");
-      details.textContent=`${event.timeText} · ${event.latlng[0].toFixed(2)}, ${event.latlng[1].toFixed(2)}`;
-      button.append(title,details);
-      button.addEventListener("click",()=>showStormEvent(event));
-      fragment.appendChild(button);
+    if(
+      button.dataset.frame ===
+      "older"
+    ){
+
+      selectedIndex =
+        Math.max(
+          0,
+          radarFrames.length - 2
+        );
+
+    }
+
+
+    if(
+      button.dataset.frame ===
+      "oldest"
+    ){
+
+      selectedIndex =
+        Math.max(
+          0,
+          radarFrames.length - 3
+        );
+
+    }
+
+
+    renderRadar();
+
+  };
+
+});
+
+
+/* MODE BUTTONS */
+
+document
+.querySelectorAll("[data-mode]")
+.forEach(button=>{
+
+  button.onclick = ()=>{
+
+    document
+    .querySelectorAll("[data-mode]")
+    .forEach(b=>{
+      b.classList.remove("active");
     });
 
-    list.appendChild(fragment);
-  }catch(error){
-    console.error("Storm reports could not load:",error);
-    $("stormCount").textContent="—";
-    $("stormListStatus").textContent="Recent reports unavailable. The map is still usable.";
+
+    button.classList.add("active");
+
+
+    const mode =
+      button.dataset.mode;
+
+
+    document
+      .getElementById("modeBadge")
+      .textContent =
+      mode.toUpperCase();
+
+
+    if(mode !== "radar"){
+
+      if(mode === "sat")
+        toast(
+          "Satellite mode coming soon."
+        );
+
+      if(mode === "alerts")
+        toast(
+          "Alerts layer coming soon."
+        );
+
+      if(mode === "storm")
+        toast(
+          "Storm reports coming soon."
+        );
+
+    }
+
+  };
+
+});
+
+
+/* LIVE BUTTON */
+
+document
+.getElementById("latestBtn")
+.onclick = ()=>{
+
+  if(!radarFrames.length)
+    return;
+
+
+  selectedIndex =
+    radarFrames.length - 1;
+
+
+  renderRadar();
+
+};
+
+
+/* PLAY RADAR */
+
+document
+.getElementById("playBtn")
+.onclick = ()=>{
+
+  if(!radarFrames.length)
+    return;
+
+
+  playing = !playing;
+
+
+  document
+  .getElementById("playBtn")
+  .textContent =
+    playing
+      ? "❚❚ Pause"
+      : "▶ Play";
+
+
+  clearInterval(playTimer);
+
+
+  if(!playing)
+    return;
+
+
+  let index =
+    Math.max(
+      0,
+      radarFrames.length - 8
+    );
+
+
+  selectedIndex = index;
+
+  renderRadar();
+
+
+  playTimer =
+    setInterval(()=>{
+
+      index++;
+
+
+      if(
+        index >=
+        radarFrames.length
+      ){
+
+        index =
+          Math.max(
+            0,
+            radarFrames.length - 8
+          );
+
+      }
+
+
+      selectedIndex =
+        index;
+
+
+      renderRadar();
+
+    },700);
+
+};
+
+
+/* REFRESH */
+
+document
+.getElementById("refreshBtn")
+.onclick =
+  ()=>loadRadar();
+
+
+/* LOCATION */
+
+document
+.getElementById("locateBtn")
+.onclick = ()=>{
+
+  if(!navigator.geolocation){
+
+    toast(
+      "Geolocation is unavailable."
+    );
+
+    return;
+
   }
-}
-loadSevereStorms();
 
-function clearMapLayers(){
-  [satelliteLayer,labelsLayer].forEach(layer=>{if(map.hasLayer(layer))map.removeLayer(layer);});
-  if(radarLayer&&map.hasLayer(radarLayer))map.removeLayer(radarLayer);
-}
-function selectMode(mode){
-  activeMode=mode;
-  document.querySelectorAll("nav [data-mode]").forEach(button=>button.classList.toggle("active",button.dataset.mode===mode));
-  $("modeBadge").textContent=mode.toUpperCase();
-  clearMapLayers();
 
-  if(mode==="radar"){
-    if(radarLayer&&$("radarToggle").classList.contains("on"))radarLayer.addTo(map);
-  }else if(mode==="satellite"){
-    satelliteLayer.addTo(map);
-    labelsLayer.addTo(map);
-  }else if(mode==="alerts"){
-    loadNwsAlerts();
-  }else if(mode==="reports"){
-    loadStormReportMarkers(false);
-  }else if(mode==="tornado"){
-    loadStormReportMarkers(true);
+  navigator.geolocation
+  .getCurrentPosition(
+
+    position=>{
+
+      const lat =
+        position.coords.latitude;
+
+      const lon =
+        position.coords.longitude;
+
+      const accuracy =
+        position.coords.accuracy;
+
+
+      L.circleMarker(
+        [lat,lon],
+        {
+          radius:7,
+          color:"#ffffff",
+          weight:2,
+          fillColor:"#00aaff",
+          fillOpacity:1
+        }
+      ).addTo(map);
+
+
+      L.circle(
+        [lat,lon],
+        {
+          radius:accuracy,
+          color:"#00aaff",
+          weight:1,
+          fill:false
+        }
+      ).addTo(map);
+
+
+      map.setView(
+        [lat,lon],
+        Math.max(
+          map.getZoom(),
+          6
+        ),
+        {
+          animate:true
+        }
+      );
+
+
+      toast(
+        "Centered on your location."
+      );
+
+    },
+
+    ()=>{
+      toast(
+        "Location permission denied."
+      );
+    },
+
+    {
+      enableHighAccuracy:true,
+      timeout:8000,
+      maximumAge:120000
+    }
+
+  );
+
+};
+
+
+/* DARK MAP */
+
+document
+.getElementById("darkToggle")
+.onclick = ()=>{
+
+  const button =
+    document.getElementById(
+      "darkToggle"
+    );
+
+
+  const enabled =
+    !button.classList.contains("on");
+
+
+  button.classList
+    .toggle("on",enabled);
+
+
+  document
+    .getElementById("map")
+    .style.filter =
+      enabled
+      ? "brightness(.58) saturate(.9) contrast(1.05)"
+      : "none";
+
+};
+
+
+/* FOLLOW */
+
+document
+.getElementById("followToggle")
+.onclick = ()=>{
+
+  const button =
+    document.getElementById(
+      "followToggle"
+    );
+
+
+  button.classList.toggle("on");
+
+
+  if(
+    button.classList.contains("on")
+  ){
+
+    document
+      .getElementById("locateBtn")
+      .click();
+
   }
-}
-document.querySelectorAll("nav [data-mode]").forEach(button=>button.addEventListener("click",()=>selectMode(button.dataset.mode)));
 
-async function loadNwsAlerts(){
-  try{
-    const center=map.getCenter();
-    const response=await fetch(`https://api.weather.gov/alerts/active?point=${center.lat},${center.lng}`,{headers:{"Accept":"application/geo+json"}});
-    if(!response.ok)throw new Error("NWS alert service unavailable");
-    const data=await response.json();
-    let count=0;
+};
 
-    (data.features||[]).forEach(feature=>{
-      if(!feature.geometry)return;
-      count++;
-      L.geoJSON(feature,{style:{color:"#ff173f",weight:2,fillColor:"#ff173f",fillOpacity:.16}})
-        .bindPopup(`<b>${safeText(feature.properties?.event||"NWS alert")}</b><br>${safeText(feature.properties?.headline||"")}<br>${safeText(feature.properties?.areaDesc||"")}`)
-        .addTo(map);
-    });
-    toast(count?`${count} active NWS alert(s).`:"No active NWS alerts here.");
-  }catch(error){
-    console.warn(error);
-    toast("NWS alerts unavailable right now.");
-  }
-}
 
-async function loadStormReportMarkers(tornadoOnly){
-  stormMarkers.forEach(marker=>map.removeLayer(marker));
-  stormMarkers=[];
+/* START */
 
-  try{
-    const url="https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/Storm_Reports/FeatureServer/0/query?where=1%3D1&outFields=*&returnGeometry=true&f=geojson&resultRecordCount=500";
-    const response=await fetch(url);
-    if(!response.ok)throw new Error("Storm report service unavailable");
-    const data=await response.json();
-    let count=0;
+setTimeout(
+  loadRadar,
+  400
+);
 
-    (data.features||[]).forEach(feature=>{
-      const properties=feature.properties||{};
-      const type=reportType(properties);
-      if(tornadoOnly&&!/tornado/i.test(type))return;
-      const latlng=reportCoordinates(feature);
-      if(!latlng)return;
-      count++;
 
-      const marker=L.circleMarker(latlng,{
-        radius:6,color:"#fff",weight:1,
-        fillColor:tornadoOnly?"#ff173f":"#ff9b29",
-        fillOpacity:.95
-      }).bindPopup(`<b>${safeText(type)}</b><br><small>Reported event, not live detection.</small>`).addTo(map);
+/* AUTO REFRESH */
 
-      stormMarkers.push(marker);
-    });
-    toast(count?`${count} report(s) shown.`:"No matching reports returned.");
-  }catch(error){
-    console.warn(error);
-    toast("Storm report feed unavailable right now.");
-  }
-}
+setInterval(
+  loadRadar,
+  5 * 60 * 1000
+);
 
-setTimeout(loadRadar,400);
-setInterval(loadRadar,5*60*1000);
 </script>
+
+<!-- ============================================================
+  2DANGER ADD-ON: Severe Rain Auto-Alert
+  PASTE THIS RIGHT BEFORE </body>  (after your existing </script>)
+  Nothing in your original code needs to change.
+============================================================= -->
+<script>
+(function(){
+
+/* ---------- SETTINGS (tweak if you want) ---------- */
+const SCAN = { south:24, north:50, west:-125, east:-66, zoom:5 }; // area that gets scanned (lower 48 US)
+const SEVERE_MIN_DBZ = 45;   // 40 = heavy (orange), 45 = very heavy (red), 55 = extreme (pink/magenta)
+const MIN_SCORE      = 8;    // how big a heavy-rain core must be to count (higher = fewer alerts)
+const CELL_PX        = 12;   // pixel block size used to group heavy pixels together
+const COOLDOWN_MIN   = 60;   // don't re-alert the same area for this many minutes
+const COOLDOWN_KM    = 250;  // "same area" distance
+const FLY_ZOOM       = 6;    // zoom level when redirecting to the storm
+const TILE           = 256;
+
+/* ---------- STATE ---------- */
+let enabled   = true;
+let soundOn   = true;
+let lastPath  = null;
+let busy      = false;
+let audioCtx  = null;
+let pendingSoundAt = 0;
+let sevMarker = null;
+let markerTimer = null;
+let bannerTimer = null;
+let currentAlert = null;
+const alerted = [];
+
+/* ---------- STYLES ---------- */
+const st = document.createElement('style');
+st.textContent = `
+.sev-pin span{display:block;width:34px;height:34px;border-radius:50%;
+  border:2px solid #ff173f;background:rgba(255,23,63,.25);
+  box-shadow:0 0 18px rgba(255,23,63,.8);animation:sevPulse 1.2s infinite}
+@keyframes sevPulse{0%{transform:scale(.5);opacity:1}100%{transform:scale(1.9);opacity:0}}
+#sevBanner{position:absolute;top:12px;left:50%;transform:translate(-50%,-160%);
+  z-index:1300;width:min(92vw,470px);padding:11px 14px;border-radius:12px;
+  border:1px solid #ff3c5c;cursor:pointer;
+  background:linear-gradient(90deg,rgba(255,23,63,.38),rgba(120,0,25,.34)),#0a0508;
+  box-shadow:0 0 28px rgba(255,23,63,.45),0 12px 34px rgba(0,0,0,.6);
+  transition:transform .35s ease;pointer-events:none;opacity:0}
+#sevBanner.show{transform:translate(-50%,0);pointer-events:auto;opacity:1;
+  animation:sevFlash 1s ease-in-out 6}
+#sevBanner b{display:block;font-size:13px;letter-spacing:2px;color:#fff}
+#sevBanner span{display:block;margin-top:4px;font-size:11px;color:#ffd3da}
+@keyframes sevFlash{0%,100%{box-shadow:0 0 28px rgba(255,23,63,.45),0 12px 34px rgba(0,0,0,.6)}
+  50%{box-shadow:0 0 46px rgba(255,23,63,.95),0 12px 34px rgba(0,0,0,.6)}}
+`;
+document.head.appendChild(st);
+
+/* ---------- UI (built with JS so your HTML stays untouched) ---------- */
+const workspace = document.getElementById('workspace');
+const panel = document.querySelector('.panel');
+
+const banner = document.createElement('div');
+banner.id = 'sevBanner';
+banner.setAttribute('role','alert');
+const bTitle = document.createElement('b');
+const bSub = document.createElement('span');
+banner.appendChild(bTitle);
+banner.appendChild(bSub);
+(workspace || document.body).appendChild(banner);
+
+if(panel){
+  const sec = document.createElement('section');
+  sec.className = 'section';
+  sec.innerHTML =
+    '<h3>Severe Rain Alert</h3>' +
+    '<div class="row"><span class="label">Auto-alert &amp; redirect</span>' +
+      '<button class="toggle on" id="sevToggle"><i></i></button></div>' +
+    '<div class="row"><span class="label">Alert sound</span>' +
+      '<button class="toggle on" id="sevSound"><i></i></button></div>' +
+    '<div class="status"><b id="sevStatus">Waiting for radar...</b>' +
+      '<span class="small" id="sevCount"></span></div>' +
+    '<div class="row"><button id="sevTest" style="flex:1">Test alert</button></div>';
+  const first = panel.querySelector('.section');
+  if(first) first.after(sec); else panel.appendChild(sec);
+}
+
+const elToggle = document.getElementById('sevToggle');
+const elSound  = document.getElementById('sevSound');
+const elStatus = document.getElementById('sevStatus');
+const elCount  = document.getElementById('sevCount');
+const elTest   = document.getElementById('sevTest');
+
+function setStatus(text, kind, count){
+  if(!elStatus) return;
+  elStatus.textContent = text;
+  elStatus.style.color =
+    kind === 'bad' ? '#ff637e' :
+    kind === 'ok'  ? '#54e9ff' : '';
+  if(elCount) elCount.textContent = count || '';
+}
+
+function say(text){
+  if(typeof toast === 'function') toast(text);
+}
+
+/* ---------- SOUND ---------- */
+function ensureAudio(){
+  try{
+    if(!audioCtx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return null;
+      audioCtx = new AC();
+    }
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }catch(e){
+    return null;
+  }
+}
+
+// Browsers only allow sound after the user has clicked/tapped once.
+['pointerdown','keydown','touchstart'].forEach(ev=>{
+  window.addEventListener(ev, ()=>{
+    const c = ensureAudio();
+    if(c && pendingSoundAt && Date.now() - pendingSoundAt < 120000){
+      pendingSoundAt = 0;
+      c.resume().then(playSiren);
+    }
+  }, {passive:true});
+});
+
+function playSiren(){
+  const c = ensureAudio();
+  if(!c || c.state !== 'running'){
+    pendingSoundAt = Date.now();
+    say('Click anywhere to enable the alert sound.');
+    return;
+  }
+  const now = c.currentTime;
+  const osc = c.createOscillator();
+  const gain = c.createGain();
+  osc.type = 'sawtooth';
+  for(let i = 0; i < 8; i++){
+    osc.frequency.setValueAtTime(i % 2 ? 640 : 960, now + i * 0.5);
+  }
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.16, now + 0.06);
+  gain.gain.setValueAtTime(0.16, now + 3.85);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 4.0);
+  osc.connect(gain);
+  gain.connect(c.destination);
+  osc.start(now);
+  osc.stop(now + 4.05);
+}
+
+/* ---------- MAP MATH ---------- */
+function lon2x(lon, z){ return (lon + 180) / 360 * Math.pow(2, z); }
+function lat2y(lat, z){
+  const r = lat * Math.PI / 180;
+  return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * Math.pow(2, z);
+}
+function px2lon(px, z){ return px / (TILE * Math.pow(2, z)) * 360 - 180; }
+function px2lat(py, z){
+  const n = Math.PI - 2 * Math.PI * py / (TILE * Math.pow(2, z));
+  return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+}
+function km(aLat, aLon, bLat, bLon){
+  const R = 6371, d = Math.PI / 180;
+  const dLat = (bLat - aLat) * d, dLon = (bLon - aLon) * d;
+  const h = Math.sin(dLat/2) ** 2 +
+            Math.cos(aLat * d) * Math.cos(bLat * d) * Math.sin(dLon/2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+/* ---------- RADAR PIXEL -> INTENSITY ----------
+   Reads RainViewer's "Universal Blue" colors (the same scheme your map uses):
+   orange = 40-44 dBZ, red/maroon = 45-54, pink/magenta = 55-64, white = 65+ */
+function dbzOf(r, g, b){
+  if(r > 250 && g > 250 && b > 250) return 66;
+  if(r >= 240 && b >= 230 && g <= 200) return 58;
+  if(g > 250 && r < 10 && b < 10) return 76;
+  if(r >= 90 && g <= 70 && b <= 20 && r > g * 2) return 50;
+  if(r >= 240 && b <= 10 && g >= 100 && g <= 175) return 42;
+  return 0;
+}
+
+/* ---------- SCANNING ---------- */
+const canvas = document.createElement('canvas');
+canvas.width = canvas.height = TILE;
+const cx = canvas.getContext('2d', { willReadFrequently:true });
+
+function loadImg(url){
+  return new Promise(res=>{
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload  = ()=>res(img);
+    img.onerror = ()=>res(null);
+    img.src = url;
+  });
+}
+
+async function scanTile(frame, tx, ty, z){
+  // smooth=0 keeps exact palette colors, snow=1 keeps snow blue (so it isn't counted as rain)
+  const url = radarHost + frame.path + '/' + TILE + '/' + z + '/' + tx + '/' + ty + '/2/0_1.png';
+  const img = await loadImg(url);
+  if(!img) return { ok:false, blocked:false, cands:[] };
+
+  let d;
+  try{
+    cx.clearRect(0, 0, TILE, TILE);
+    cx.drawImage(img, 0, 0, TILE, TILE);
+    d = cx.getImageData(0, 0, TILE, TILE).data;
+  }catch(e){
+    return { ok:false, blocked:true, cands:[] };
+  }
+
+  const n = Math.ceil(TILE / CELL_PX);
+  const score = new Float32Array(n * n);
+  const sx = new Float32Array(n * n);
+  const sy = new Float32Array(n * n);
+  const best = new Uint8Array(n * n);
+
+  for(let y = 0; y < TILE; y++){
+    for(let x = 0; x < TILE; x++){
+      const i = (y * TILE + x) * 4;
+      if(d[i + 3] < 120) continue;
+      const lvl = dbzOf(d[i], d[i + 1], d[i + 2]);
+      if(lvl < SEVERE_MIN_DBZ) continue;
+      const w = lvl >= 55 ? 3 : 1;
+      const ci = Math.floor(y / CELL_PX) * n + Math.floor(x / CELL_PX);
+      score[ci] += w;
+      sx[ci] += x * w;
+      sy[ci] += y * w;
+      if(lvl > best[ci]) best[ci] = lvl;
+    }
+  }
+
+  const cands = [];
+  for(let ci = 0; ci < score.length; ci++){
+    if(score[ci] < MIN_SCORE) continue;
+    cands.push({
+      score: score[ci],
+      level: best[ci],
+      lat: px2lat(ty * TILE + sy[ci] / score[ci] + 0.5, z),
+      lon: px2lon(tx * TILE + sx[ci] / score[ci] + 0.5, z)
+    });
+  }
+  return { ok:true, blocked:false, cands };
+}
+
+function recentlyAlerted(c){
+  const cutoff = Date.now() - COOLDOWN_MIN * 60000;
+  for(let i = alerted.length - 1; i >= 0; i--){
+    if(alerted[i].t < cutoff){ alerted.splice(i, 1); continue; }
+    if(km(c.lat, c.lon, alerted[i].lat, alerted[i].lon) < COOLDOWN_KM) return true;
+  }
+  return false;
+}
+
+async function scanAndAlert(frame){
+  setStatus('Scanning...', '', '');
+
+  const z = SCAN.zoom;
+  const x0 = Math.floor(lon2x(SCAN.west, z)),  x1 = Math.floor(lon2x(SCAN.east, z));
+  const y0 = Math.floor(lat2y(SCAN.north, z)), y1 = Math.floor(lat2y(SCAN.south, z));
+
+  const jobs = [];
+  for(let ty = y0; ty <= y1; ty++){
+    for(let tx = x0; tx <= x1; tx++){
+      jobs.push(scanTile(frame, tx, ty, z));
+    }
+  }
+  const results = await Promise.all(jobs);
+
+  if(!results.some(r => r.ok)){
+    if(results.some(r => r.blocked)) setStatus('Scan blocked by browser', 'bad', '');
+    else setStatus('Radar tiles unavailable', 'bad', '');
+    return;
+  }
+
+  // strongest first, then merge candidates that belong to the same storm area
+  const all = [].concat(...results.map(r => r.cands)).sort((a, b) => b.score - a.score);
+  const areas = [];
+  all.forEach(c=>{
+    if(!areas.some(a => km(a.lat, a.lon, c.lat, c.lon) < 150)) areas.push(c);
+  });
+
+  if(!areas.length){
+    setStatus('No severe rain', 'ok', '');
+    return;
+  }
+
+  setStatus('Severe rain found', 'bad', areas.length + (areas.length === 1 ? ' area' : ' areas'));
+
+  const fresh = areas.find(a => !recentlyAlerted(a));
+  if(fresh){
+    alerted.push({ lat:fresh.lat, lon:fresh.lon, t:Date.now() });
+    triggerAlert(fresh);
+  }
+}
+
+/* ---------- THE ALERT ---------- */
+function levelText(l){
+  return l >= 55 ? 'Extreme core (55+ dBZ)' :
+         l >= 45 ? 'Very heavy core (45+ dBZ)' : 'Heavy core (40+ dBZ)';
+}
+
+function triggerAlert(c, opts){
+  opts = opts || {};
+  currentAlert = c;
+
+  // banner
+  bTitle.textContent = opts.test ? '\u26A0 TEST ALERT' : '\u26A0 SEVERE RAIN DETECTED';
+  bSub.textContent = (opts.test ? 'Sound and banner check' : levelText(c.level)) +
+    ' \u00B7 ' + c.lat.toFixed(2) + '\u00B0, ' + c.lon.toFixed(2) + '\u00B0';
+  banner.classList.remove('show');
+  void banner.offsetWidth;
+  banner.classList.add('show');
+  clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(()=>banner.classList.remove('show'), 12000);
+
+  if(!opts.test){
+    // pulsing marker
+    if(sevMarker) map.removeLayer(sevMarker);
+    sevMarker = L.marker([c.lat, c.lon], {
+      icon: L.divIcon({
+        className:'sev-pin',
+        html:'<span></span>',
+        iconSize:[34,34],
+        iconAnchor:[17,17]
+      }),
+      interactive:false,
+      keyboard:false
+    }).addTo(map);
+    clearTimeout(markerTimer);
+    markerTimer = setTimeout(()=>{
+      if(sevMarker){ map.removeLayer(sevMarker); sevMarker = null; }
+    }, 30 * 60000);
+
+    // redirect to the storm
+    map.flyTo([c.lat, c.lon], FLY_ZOOM, { duration:2 });
+
+    // best-effort place name (silently skipped if it fails)
+    fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&lat=' +
+          c.lat + '&lon=' + c.lon, { headers:{ 'Accept':'application/json' } })
+      .then(r => r.ok ? r.json() : null)
+      .then(j=>{
+        if(!j || !j.address || currentAlert !== c) return;
+        const a = j.address;
+        const place = [a.city || a.town || a.village || a.hamlet || a.county, a.state]
+          .filter(Boolean).join(', ');
+        if(place) bSub.textContent = 'Near ' + place + ' \u00B7 ' + levelText(c.level);
+      })
+      .catch(()=>{});
+  }
+
+  if(soundOn || opts.forceSound) playSiren();
+}
+
+banner.addEventListener('click', ()=>{
+  if(currentAlert && !currentAlert.test){
+    map.flyTo([currentAlert.lat, currentAlert.lon], FLY_ZOOM, { duration:1.2 });
+  }
+});
+
+/* ---------- CONTROLS ---------- */
+if(elToggle) elToggle.addEventListener('click', ()=>{
+  enabled = !enabled;
+  elToggle.classList.toggle('on', enabled);
+  if(enabled){ lastPath = null; setStatus('Waiting for radar...', '', ''); }
+  else { setStatus('Auto-alert off', '', ''); }
+});
+
+if(elSound) elSound.addEventListener('click', ()=>{
+  soundOn = !soundOn;
+  elSound.classList.toggle('on', soundOn);
+});
+
+if(elTest) elTest.addEventListener('click', ()=>{
+  ensureAudio();
+  const m = map.getCenter();
+  triggerAlert({ lat:m.lat, lon:m.lng, level:50, test:true }, { test:true, forceSound:true });
+});
+
+/* ---------- WATCH YOUR EXISTING RADAR DATA ----------
+   Every time your app loads a newer radar frame (every 5 min / on refresh),
+   this scans it. No changes to your loadRadar() needed. */
+async function tick(){
+  if(busy || !enabled) return;
+  if(typeof radarFrames === 'undefined' || !radarFrames.length) return;
+  const frame = radarFrames[radarFrames.length - 1];
+  if(frame.path === lastPath) return;
+  busy = true;
+  lastPath = frame.path;
+  try{
+    await scanAndAlert(frame);
+  }catch(err){
+    console.error('Severe rain scan failed', err);
+    setStatus('Scan failed', 'bad', '');
+  }
+  busy = false;
+}
+setInterval(tick, 3000);
+
+})();
+</script>
+
 </body>
 </html>
