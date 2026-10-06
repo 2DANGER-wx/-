@@ -789,6 +789,49 @@ input[type=range]{
   }
 
 }
+
+
+/* =========================
+   2DANGER ISAIAS PERSISTENT TRACKER
+   ========================= */
+.d2-isaias-marker-wrap{background:transparent!important;border:0!important}
+.d2-isaias-marker{
+  width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  position:relative;border:1px solid rgba(25,215,255,.7);
+  background:radial-gradient(circle,rgba(0,170,255,.22),rgba(3,8,15,.84) 62%,rgba(255,23,63,.12));
+  box-shadow:0 0 18px rgba(0,170,255,.55),0 0 26px rgba(255,23,63,.2);
+  animation:d2IsaiasSpin 3.2s linear infinite;
+}
+.d2-isaias-marker::before{
+  content:"";width:24px;height:24px;border-radius:50%;
+  border:4px solid #19d7ff;border-right-color:#ff173f;border-bottom-color:transparent;
+  transform:rotate(-24deg);
+}
+.d2-isaias-marker::after{
+  content:"";position:absolute;inset:5px;border-radius:50%;
+  border:1px dashed rgba(255,255,255,.28);
+}
+@keyframes d2IsaiasSpin{to{transform:rotate(360deg)}}
+.d2-isaias-label{
+  margin-top:6px;padding:5px 7px;border-radius:7px;white-space:nowrap;
+  background:rgba(3,7,13,.95);border:1px solid #234c6a;color:#fff;
+  font-size:10px;font-weight:800;letter-spacing:.4px;text-align:center;
+  box-shadow:0 6px 18px rgba(0,0,0,.35);
+}
+.d2-isaias-label small{display:block;margin-top:2px;color:#7fdfff;font-weight:600}
+.d2-isaias-panel{
+  position:absolute;top:82px;right:12px;z-index:1400;width:min(310px,calc(100vw - 24px));
+  padding:11px 12px;border:1px solid #284d68;border-radius:11px;
+  background:linear-gradient(120deg,rgba(0,137,220,.12),rgba(255,23,63,.08)),rgba(4,9,16,.95);
+  box-shadow:0 14px 35px rgba(0,0,0,.55);backdrop-filter:blur(10px);display:none;
+}
+.d2-isaias-panel.show{display:block}
+.d2-isaias-panel b{display:block;font-size:12px;letter-spacing:1px}
+.d2-isaias-panel p{margin:6px 0;color:#b8c6d5;font-size:10px;line-height:1.45}
+.d2-isaias-panel .d2-isaias-actions{display:flex;gap:6px}
+.d2-isaias-panel button{flex:1;height:30px;font-size:10px}
+.d2-isaias-panel .d2-isaias-note{color:#ffb8c4}
+
 </style>
 </head>
 
@@ -976,6 +1019,8 @@ Tornado Tracker
   <div class="news-window" id="newsWindow" title="Click for full storm news">
     <div class="news-track" id="newsTrack">
       <span class="news-item"><b>NEVER STOP CHASING:</b> The Reed Timmer documentary directed by Ken Cole is currently in theaters. <span class="news-source">Official film site</span></span>
+      <span class="news-item"><b>2DANGER ISAIAS UPDATE:</b> A persistent preliminary Gulf tracker has been added for the system that could become Tropical Storm Isaias. The marker remains fixed until the next 2DANGER update. <span class="news-source">2DANGER update</span></span>
+
       <span class="news-item"><b>BLUE RAPIDS, KS:</b> Team Dominator deployed a parachuted probe into a tornado; reporting says the probe completed multiple loops and returned valuable storm data. <span class="news-source">KMBC / NWS</span></span>
       <span class="news-item"><b>DOMINATOR F150:</b> Recent chase footage has highlighted heavy rain, flooding, tornado intercepts and damage to the vehicle. <span class="news-source">Reed Timmer updates</span></span>
       <span class="news-item"><b>SEVERE WEATHER:</b> The NWS Storm Prediction Center reported no organized severe thunderstorms forecast across the U.S. overnight on Oct. 6, 2026. <span class="news-source">NWS SPC</span></span>
@@ -3455,6 +3500,17 @@ setInterval(tick, 3000);
         <a href="https://www.neverstopchasingfilm.com/" target="_blank" rel="noopener">Open official film site</a>
       </article>
 
+
+      <article class="news-story" id="isaiasNewsStory">
+        <div class="kicker">2DANGER Update</div>
+        <h4>Tropical Storm Isaias — Persistent Gulf Tracker</h4>
+        <p>2DANGER has added a small rotating Gulf marker for the system that could become Tropical Storm Isaias. This is a persistent preliminary visualization and stays in place until a later 2DANGER update. It is not an official NHC forecast track. As of Oct. 6, 2026, the National Hurricane Center is referring to the Gulf system as AL92 and says there are currently no Atlantic tropical cyclones.</p>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+          <button class="isaias-view-btn" type="button">VIEW ON MAP</button>
+          <a href="https://www.nhc.noaa.gov/" target="_blank" rel="noopener">OPEN NHC</a>
+        </div>
+      </article>
+
       <article class="news-story">
         <div class="kicker">Storm Science</div>
         <h4>Blue Rapids, Kansas probe deployment</h4>
@@ -3854,6 +3910,133 @@ setInterval(tick, 3000);
   };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', dedupeCloseButtons);
   else dedupeCloseButtons();
+})();
+</script>
+
+
+<script>
+/* ==========================================================
+   2DANGER — PERSISTENT TROPICAL STORM ISAIAS UPDATE
+   This marker intentionally stays fixed until these values
+   are manually updated in this file.
+   ========================================================== */
+(function(){
+  const ISAIAAS_UPDATE = {
+    enabled: true,
+    name: 'Tropical Storm Isaias',
+    // Preliminary visual location in the Gulf; not an official forecast point.
+    lat: 22.0,
+    lon: -94.5,
+    status: 'Preliminary Gulf tracker',
+    updated: '2026-10-06'
+  };
+
+  function addIsaias(){
+    if(!ISAIAAS_UPDATE.enabled || typeof map === 'undefined' || !window.L) return;
+    if(window.__d2IsaiasMarker) return;
+
+    const icon=L.divIcon({
+      className:'d2-isaias-marker-wrap',
+      html:'<div class="d2-isaias-marker" title="Tropical Storm Isaias"></div>',
+      iconSize:[46,46],
+      iconAnchor:[23,23]
+    });
+
+    const marker=L.marker(
+      [ISAIAAS_UPDATE.lat,ISAIAAS_UPDATE.lon],
+      {icon,zIndexOffset:900,keyboard:false}
+    ).addTo(map);
+
+    const popup=document.createElement('div');
+    popup.style.minWidth='210px';
+    popup.innerHTML=
+      '<b style="font-size:13px;color:#ff3c5c">'+ISAIAAS_UPDATE.name+'</b>'+
+      '<div style="font-size:10px;color:#6edcff;margin-top:3px">'+ISAIAAS_UPDATE.status+'</div>'+
+      '<div style="font-size:10px;line-height:1.45;margin-top:8px">Persistent 2DANGER visualization. This is not an official NHC forecast point.</div>'+
+      '<button id="d2IsaiasPopupBtn" style="margin-top:8px;width:100%;height:29px">OPEN UPDATE</button>';
+
+    marker.bindPopup(popup);
+    marker.on('popupopen',()=>{
+      document.getElementById('d2IsaiasPopupBtn')?.addEventListener('click',openIsaiasUpdate,{once:true});
+    });
+
+    const label=L.marker(
+      [ISAIAAS_UPDATE.lat+0.7,ISAIAAS_UPDATE.lon],
+      {
+        icon:L.divIcon({
+          className:'d2-isaias-marker-wrap',
+          html:'<div class="d2-isaias-label">'+ISAIAAS_UPDATE.name+'<small>'+ISAIAAS_UPDATE.status+'</small></div>',
+          iconSize:[190,42],
+          iconAnchor:[95,0]
+        }),
+        interactive:false,
+        keyboard:false,
+        zIndexOffset:899
+      }
+    ).addTo(map);
+
+    window.__d2IsaiasMarker=marker;
+    window.__d2IsaiasLabel=label;
+
+    const panel=document.createElement('div');
+    panel.className='d2-isaias-panel';
+    panel.id='d2IsaiasPanel';
+    panel.innerHTML=
+      '<b>2DANGER TROPICAL UPDATE</b>'+
+      '<p><strong>'+ISAIAAS_UPDATE.name+'</strong> has a persistent preliminary marker in the Gulf. It stays here until this update is manually replaced.</p>'+
+      '<p class="d2-isaias-note">Current official context: NHC is monitoring AL92; the Gulf system is not currently listed as an Atlantic tropical cyclone.</p>'+
+      '<div class="d2-isaias-actions"><button id="d2IsaiasMapBtn">VIEW ON MAP</button><button id="d2IsaiasNewsBtn">NEWS</button></div>';
+    (document.getElementById('workspace')||document.body).appendChild(panel);
+
+    document.getElementById('d2IsaiasMapBtn').onclick=()=>{
+      map.flyTo([ISAIAAS_UPDATE.lat,ISAIAAS_UPDATE.lon],6,{duration:1.5});
+      panel.classList.remove('show');
+      marker.openPopup();
+    };
+    document.getElementById('d2IsaiasNewsBtn').onclick=()=>openIsaiasNews();
+  }
+
+  function openIsaiasUpdate(){
+    const panel=document.getElementById('d2IsaiasPanel');
+    if(panel) panel.classList.add('show');
+  }
+
+  function openIsaiasNews(){
+    const modal=document.getElementById('newsModal');
+    const story=document.getElementById('isaiasNewsStory');
+    if(modal){
+      modal.classList.add('show');
+      story?.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+  }
+
+  function wireNewsButton(){
+    document.querySelectorAll('.isaias-view-btn').forEach(btn=>{
+      btn.onclick=()=>{
+        openIsaiasUpdate();
+        if(typeof map!=='undefined') map.flyTo([ISAIAAS_UPDATE.lat,ISAIAAS_UPDATE.lon],6,{duration:1.5});
+        document.getElementById('newsModal')?.classList.remove('show');
+      };
+    });
+  }
+
+  window.d2UpdateIsaias=(lat,lon,status)=>{
+    // Manual update helper for the next research update.
+    if(typeof lat==='number') ISAIAAS_UPDATE.lat=lat;
+    if(typeof lon==='number') ISAIAAS_UPDATE.lon=lon;
+    if(status) ISAIAAS_UPDATE.status=status;
+    if(window.__d2IsaiasMarker){
+      window.__d2IsaiasMarker.setLatLng([ISAIAAS_UPDATE.lat,ISAIAAS_UPDATE.lon]);
+      window.__d2IsaiasLabel?.setLatLng([ISAIAAS_UPDATE.lat+0.7,ISAIAAS_UPDATE.lon]);
+    }
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',()=>{addIsaias();wireNewsButton();});
+  }else{
+    addIsaias();
+    wireNewsButton();
+  }
 })();
 </script>
 
