@@ -2476,10 +2476,18 @@ setInterval(
     }
   }
   function updateAvatar(){const p=profile();avatar.innerHTML=p?.avatar?`<img alt="Profile" src="${p.avatar}">`:(p?initials(p.display||p.username):'?');}
-  avatar.onclick=()=>{renderProfileMenu();menu.classList.toggle('show');};
-  if(settingsIcon) settingsIcon.onclick=()=>{ if(profile()&&session()) showSettings(); else if(profile()) showLogin(); else showSignup(); };
-  avatar.onclick=()=>{renderProfileMenu();menu.classList.toggle('show');};
-  if(settingsIcon) settingsIcon.onclick=()=>{ if(profile()) showSettings(); else showSignup(); };
+  avatar.onclick=()=>{
+    if(profile() && session()){
+      renderProfileMenu();
+      menu.classList.toggle('show');
+    }else{
+      showLogin();
+    }
+  };
+  if(settingsIcon) settingsIcon.onclick=()=>{
+    if(profile() && session()) showSettings();
+    else showLogin();
+  };
   document.addEventListener('click',e=>{if(!profWrap.contains(e.target))menu.classList.remove('show');});
   renderProfileMenu();updateAvatar();
 
