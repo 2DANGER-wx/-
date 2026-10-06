@@ -2294,6 +2294,7 @@ setInterval(
     .d2-profile{position:relative;display:flex;align-items:center;z-index:1600}
     .d2-profile-menu{z-index:1700}
     .d2-avatar{width:36px;height:36px;border-radius:50%;border:1px solid #1a4767;background:linear-gradient(145deg,#00aaff33,#ff173f33);color:#fff;font-weight:900;cursor:pointer}
+    .d2-avatar img,.d2-menu-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}.d2-menu-avatar{width:38px;height:38px;border-radius:50%;overflow:hidden;border:1px solid #1a4767;background:#071421;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;flex:none}.d2-form-label{display:block;font-size:9px;letter-spacing:1.5px;color:#8da1b5;margin-top:5px}.d2-form-error{min-height:16px;margin-top:7px;color:#ff6f88;font-size:10px}.d2-avatar-preview{width:72px;height:72px;border-radius:50%;border:1px solid #1a4767;background:linear-gradient(145deg,#00aaff33,#ff173f33);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;overflow:hidden;margin-top:5px}.d2-avatar-preview img{width:100%;height:100%;object-fit:cover}.d2-profile-menu{max-height:75vh;overflow:auto}
     .d2-account-btn{width:36px;height:36px;padding:0;margin-left:4px;font-size:16px}
     .d2-account-btn.locked{opacity:.65}
     .d2-nav-home{font-weight:900}
@@ -2385,32 +2386,97 @@ setInterval(
   overlay.addEventListener('click',e=>{if(e.target===overlay) overlay.classList.remove('show');});
 
   function initials(name){return (name||'?').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase()||'?';}
+  function session(){try{return JSON.parse(localStorage.getItem('2danger_session_v1')||'null')}catch(e){return null;}}
+  function setSession(username){try{localStorage.setItem('2danger_session_v1',JSON.stringify({username,at:Date.now()}));}catch(e){}}
+  function clearSession(){try{localStorage.removeItem('2danger_session_v1')}catch(e){}}
+  async function hashPassword(password,salt){
+    if(!window.crypto?.subtle) return btoa(unescape(encodeURIComponent(salt+'|'+password)));
+    const enc=new TextEncoder();
+    const key=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveBits']);
+    const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt:enc.encode(salt),iterations:120000,hash:'SHA-256'},key,256);
+    return Array.from(new Uint8Array(bits)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  function avatarDataUrl(p){return p?.avatar||'';}
+  function compressImage(file){
+    return new Promise((resolve,reject)=>{
+      if(!file) return resolve('');
+      const reader=new FileReader();
+      reader.onload=()=>{
+        const img=new Image();
+        img.onload=()=>{
+          const size=256, c=document.createElement('canvas'); c.width=size;c.height=size;
+          const ctx=c.getContext('2d');
+          const s=Math.min(img.width,img.height), sx=(img.width-s)/2, sy=(img.height-s)/2;
+          ctx.clearRect(0,0,size,size); ctx.drawImage(img,sx,sy,s,s,0,0,size,size);
+          resolve(c.toDataURL('image/webp',0.82));
+        };
+        img.onerror=reject; img.src=reader.result;
+      };
+      reader.onerror=reject; reader.readAsDataURL(file);
+    });
+  }
   function showSignup(){
-    openModal('CREATE 2DANGER ACCOUNT',`<div class="d2-count" style="margin-bottom:9px">Your profile is saved locally in this browser.</div>
-      <input id="d2SignName" placeholder="Username" maxlength="20" style="width:100%;height:34px;margin:5px 0 8px;border:1px solid #183650;background:#040a11;color:#fff;border-radius:7px;padding:0 9px">
-      <input id="d2SignDisplay" placeholder="Display name" maxlength="30" style="width:100%;height:34px;margin:5px 0 8px;border:1px solid #183650;background:#040a11;color:#fff;border-radius:7px;padding:0 9px">
-      <button id="d2SignCreate" style="width:100%">SIGN UP</button>`);
-    $('d2SignCreate').onclick=()=>{const u=$('d2SignName').value.trim(),d=$('d2SignDisplay').value.trim()||u;if(!u){toast('Enter a username.');return;}saveProfile({username:u,display:d,theme:'default',created:Date.now()});overlay.classList.remove('show');updateAvatar();updateSettingsLock();toast('2DANGER profile created.');};
+    openModal('CREATE 2DANGER ACCOUNT',`<div class="d2-count" style="margin-bottom:9px">Your account is stored locally in this browser. This is a static-site account, not a server account.</div>
+      <label class="d2-form-label">USERNAME</label>
+      <input id="d2SignName" autocomplete="username" placeholder="Username" maxlength="20" style="width:100%;height:38px;margin:5px 0 8px;border:1px solid #183650;background:#040a11;color:#fff;border-radius:7px;padding:0 9px">
+      <label class="d2-form-label">PASSWORD</label>
+      <input id="d2SignPass" autocomplete="new-password" type="password" placeholder="Password" maxlength="64" style="width:100%;height:38px;margin:5px 0 8px;border:1px solid #183650;background:#040a11;color:#fff;border-radius:7px;padding:0 9px">
+      <label class="d2-form-label">CONFIRM PASSWORD</label>
+      <input id="d2SignPass2" autocomplete="new-password" type="password" placeholder="Confirm password" maxlength="64" style="width:100%;height:38px;margin:5px 0 8px;border:1px solid #183650;background:#040a11;color:#fff;border-radius:7px;padding:0 9px">
+      <label class="d2-form-label">DISPLAY NAME</label>
+      <input id="d2SignDisplay" placeholder="Display name" maxlength="30" style="width:100%;height:38px;margin:5px 0 8px;border:1px solid #183650;background:#040a11;color:#fff;border-radius:7px;padding:0 9px">
+      <label class="d2-form-label">PROFILE PICTURE</label>
+      <input id="d2SignAvatar" type="file" accept="image/png,image/jpeg,image/webp,image/gif" style="width:100%;margin:5px 0 12px;color:#cbd8e5">
+      <div id="d2AvatarPreview" class="d2-avatar-preview">?</div>
+      <button id="d2SignCreate" style="width:100%;margin-top:12px">CREATE ACCOUNT</button>
+      <div id="d2SignError" class="d2-form-error"></div>`);
+    const file=$('d2SignAvatar'),preview=$('d2AvatarPreview');
+    file.onchange=async()=>{const f=file.files?.[0]; if(!f)return; try{preview.innerHTML='<span>...</span>'; preview.dataset.avatar=await compressImage(f); preview.innerHTML='<img alt="Profile preview" src="'+preview.dataset.avatar+'">';}catch(e){preview.innerHTML='<span>?</span>'; toast('Could not read that image.');}};
+    $('d2SignCreate').onclick=async()=>{
+      const u=$('d2SignName').value.trim(), d=$('d2SignDisplay').value.trim()||u, p1=$('d2SignPass').value, p2=$('d2SignPass2').value, err=$('d2SignError');
+      if(!/^[A-Za-z0-9_]{3,20}$/.test(u)){err.textContent='Username must be 3–20 characters using letters, numbers, or _. ';return;}
+      if(p1.length<6){err.textContent='Password must be at least 6 characters.';return;}
+      if(p1!==p2){err.textContent='Passwords do not match.';return;}
+      const salt=crypto?.randomUUID?crypto.randomUUID():String(Date.now())+Math.random();
+      const hp=await hashPassword(p1,salt);
+      const existing=profile();
+      saveProfile({username:u,display:d,theme:existing?.theme||'default',created:Date.now(),passwordHash:hp,passwordSalt:salt,avatar:preview.dataset.avatar||existing?.avatar||''});
+      setSession(u);
+      overlay.classList.remove('show'); updateAvatar(); updateSettingsLock(); renderProfileMenu(); toast('2DANGER account created.');
+    };
   }
   function updateSettingsLock(){
-    const p=profile();
-    if(settingsIcon){settingsIcon.classList.toggle('locked',!p);settingsIcon.title=p?'Settings / Free Pro':'Create an account to unlock settings';}
+    const p=profile(), logged=!!session()&&!!p;
+    if(settingsIcon){settingsIcon.classList.toggle('locked',!logged);settingsIcon.title=logged?'Settings / Free Pro':'Create or sign in to an account to unlock settings';}
+  }
+  function showLogin(){
+    openModal('SIGN IN TO 2DANGER',`<div class="d2-count" style="margin-bottom:9px">Your account is stored locally in this browser.</div>
+      <label class="d2-form-label">USERNAME</label>
+      <input id="d2LoginName" autocomplete="username" placeholder="Username" style="width:100%;height:38px;margin:5px 0 8px;border:1px solid #183650;background:#040a11;color:#fff;border-radius:7px;padding:0 9px">
+      <label class="d2-form-label">PASSWORD</label>
+      <input id="d2LoginPass" autocomplete="current-password" type="password" placeholder="Password" style="width:100%;height:38px;margin:5px 0 8px;border:1px solid #183650;background:#040a11;color:#fff;border-radius:7px;padding:0 9px">
+      <button id="d2LoginBtn" style="width:100%">SIGN IN</button>
+      <button id="d2LoginSignup" style="width:100%;margin-top:7px">CREATE NEW ACCOUNT</button>
+      <div id="d2LoginError" class="d2-form-error"></div>`);
+    $('d2LoginBtn').onclick=async()=>{const p=profile(),u=$('d2LoginName').value.trim(),pw=$('d2LoginPass').value,err=$('d2LoginError');if(!p||u!==p.username){err.textContent='Account not found in this browser.';return;}const ok=(await hashPassword(pw,p.passwordSalt))===p.passwordHash;if(!ok){err.textContent='Incorrect password.';return;}setSession(u);overlay.classList.remove('show');updateAvatar();updateSettingsLock();renderProfileMenu();toast('Signed in.');};
+    $('d2LoginSignup').onclick=()=>showSignup();
   }
   function renderProfileMenu(){
-    const p=profile();
+    const p=profile(), logged=!!session()&&!!p;
     if(!p){
-      menu.innerHTML=`<b>Create 2DANGER profile</b><div class="d2-count" style="margin:6px 0 10px">Create an account to unlock Settings / Pro.</div>
-        <button id="d2CreateProfile" style="width:100%">SIGN UP</button>`;
+      menu.innerHTML=`<b>Create 2DANGER profile</b><div class="d2-count" style="margin:6px 0 10px">Create an account to unlock Settings / Pro.</div><button id="d2CreateProfile" style="width:100%">SIGN UP</button>`;
       $('d2CreateProfile').onclick=()=>showSignup();
+    }else if(!logged){
+      menu.innerHTML=`<b>${p.display||p.username}</b><div class="d2-count" style="margin:6px 0 10px">Account found on this browser.</div><button id="d2LoginProfile" style="width:100%;margin-bottom:6px">SIGN IN</button><button id="d2NewAccount" style="width:100%">CREATE NEW ACCOUNT</button>`;
+      $('d2LoginProfile').onclick=()=>showLogin(); $('d2NewAccount').onclick=()=>showSignup();
     }else{
-      menu.innerHTML=`<b>${p.display||p.username}</b><div class="d2-count" style="margin:4px 0 10px">@${p.username}</div>
-        <button id="d2ProfilePage" style="width:100%;margin-bottom:6px">PROFILE</button><button id="d2Settings" style="width:100%;margin-bottom:6px">SETTINGS / FREE PRO</button><button id="d2SignOut" style="width:100%">SIGN OUT</button>`;
-      $('d2ProfilePage').onclick=()=>showProfile();
-      $('d2Settings').onclick=()=>showSettings();
-      $('d2SignOut').onclick=()=>{localStorage.removeItem(LS);renderProfileMenu();updateAvatar();updateSettingsLock();toast('Signed out.');};
+      menu.innerHTML=`<div style="display:flex;align-items:center;gap:9px;margin-bottom:9px"><div class="d2-menu-avatar">${p.avatar?`<img alt="" src="${p.avatar}">`:initials(p.display||p.username)}</div><div><b>${p.display||p.username}</b><div class="d2-count">@${p.username}</div></div></div><button id="d2ProfilePage" style="width:100%;margin-bottom:6px">PROFILE</button><button id="d2Settings" style="width:100%;margin-bottom:6px">SETTINGS / FREE PRO</button><button id="d2SignOut" style="width:100%">SIGN OUT</button>`;
+      $('d2ProfilePage').onclick=()=>showProfile(); $('d2Settings').onclick=()=>showSettings(); $('d2SignOut').onclick=()=>{clearSession();renderProfileMenu();updateAvatar();updateSettingsLock();toast('Signed out.');};
     }
   }
-  function updateAvatar(){const p=profile();avatar.textContent=p?initials(p.display||p.username):'?';}
+  function updateAvatar(){const p=profile();avatar.innerHTML=p?.avatar?`<img alt="Profile" src="${p.avatar}">`:(p?initials(p.display||p.username):'?');}
+  avatar.onclick=()=>{renderProfileMenu();menu.classList.toggle('show');};
+  if(settingsIcon) settingsIcon.onclick=()=>{ if(profile()&&session()) showSettings(); else if(profile()) showLogin(); else showSignup(); };
   avatar.onclick=()=>{renderProfileMenu();menu.classList.toggle('show');};
   if(settingsIcon) settingsIcon.onclick=()=>{ if(profile()) showSettings(); else showSignup(); };
   document.addEventListener('click',e=>{if(!profWrap.contains(e.target))menu.classList.remove('show');});
@@ -2695,8 +2761,9 @@ setInterval(
     $('d2ProfileFromSettings').onclick=()=>showProfile();
   }
   function showProfile(){
-    const p=profile();if(!p){openModal('SIGN UP','<div class="d2-count">Create your local profile from the profile button in the corner.</div>');return;}
-    openModal('PROFILE',`<div class="d2-setting-row"><div><b>${cleanText(p.display)}</b><small>@${cleanText(p.username)}</small></div><span class="d2-pill">PRO</span></div><div class="d2-mini-status">This profile is stored only in your browser. No password or server account is used.</div>`);
+    const p=profile();if(!p){showSignup();return;}
+    openModal('PROFILE',`<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><div class="d2-profile-big">${p.avatar?`<img alt="Profile" src="${p.avatar}">`:initials(p.display)}</div><div><b>${cleanText(p.display)}</b><small style="display:block;color:#93a3b4;margin-top:2px">@${cleanText(p.username)}</small></div></div><div class="d2-setting-row"><div><b>Profile picture</b><small>Change your avatar</small></div><input id="d2ProfilePicEdit" type="file" accept="image/png,image/jpeg,image/webp,image/gif" style="max-width:160px;color:#cbd8e5"></div><div class="d2-setting-row"><div><b>Account</b><small>Password protected local account</small></div><span class="d2-pill">LOCAL</span></div><div class="d2-mini-status">This profile stays in this browser. There is no server-side account system in this single HTML file.</div>`);
+    $('d2ProfilePicEdit').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const avatarData=await compressImage(f);const next=profile()||p;next.avatar=avatarData;saveProfile(next);updateAvatar();renderProfileMenu();showProfile();toast('Profile picture updated.');}catch(err){toast('Could not update profile picture.');}};
   }
 
   function applyTheme(){
