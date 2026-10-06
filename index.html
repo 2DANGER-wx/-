@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#05080f">
-<title>2DANGER</title>
+<title>2DANGER — Live Weather Radar</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2212%22 fill=%22%2303050a%22/%3E%3Ccircle cx=%2232%22 cy=%2232%22 r=%2224%22 fill=%22none%22 stroke=%22%2300aaff%22 stroke-width=%225%22/%3E%3Cpath d=%22M17 38C24 25 31 18 47 17%22 fill=%22none%22 stroke=%22%23ff173f%22 stroke-width=%227%22 stroke-linecap=%22round%22/%3E%3Ctext x=%2232%22 y=%2240%22 fill=%22%2300aaff%22 font-size=%2217%22 font-family=%22Arial%20Black,Arial%22 text-anchor=%22middle%22%3E2D%3C/text%3E%3C/svg%3E">
 
 <link rel="stylesheet"
@@ -57,9 +57,14 @@ body{
 /* TOP BAR */
 
 header{
+  position:relative;
+  isolation:isolate;
   display:flex;
   align-items:center;
+  flex-wrap:nowrap;
   gap:13px;
+  min-width:0;
+  min-height:62px;
   padding:0 13px;
   background:
     linear-gradient(
@@ -177,11 +182,15 @@ button.active{
 #workspace{
   position:relative;
   min-height:0;
+  min-width:0;
+  overflow:hidden;
+  z-index:1;
 }
 
 #map{
   position:absolute;
   inset:0;
+  z-index:0;
   background:#050912;
 }
 
@@ -3579,6 +3588,36 @@ setInterval(tick, 3000);
 
     /* history bar title bar keeps it movable without changing playback controls */
     .d2-timeline-tools{display:flex;align-items:center;gap:5px}
+
+    /* FINAL HEADER / NEWS LAYOUT FIXES */
+    header{position:relative!important;z-index:5000!important;isolation:isolate;flex-wrap:nowrap!important;min-width:0!important;min-height:62px!important;overflow:hidden}
+    #workspace{position:relative!important;z-index:1!important;overflow:hidden!important;min-width:0!important}
+    #map{z-index:0!important}
+    header > .brand-logo{position:relative;z-index:2;flex:0 0 auto}
+    header > .brand{position:relative;z-index:2;flex:0 0 auto}
+    header > .live{position:relative;z-index:2;flex:0 0 auto}
+    header > nav{position:relative;z-index:2;flex:0 1 auto;min-width:0;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none}
+    header > nav::-webkit-scrollbar{display:none}
+    header > .news-ticker{position:relative!important;z-index:3!important;order:initial!important;flex:1 1 clamp(180px,30vw,520px)!important;min-width:0!important;max-width:min(520px,34vw)!important;margin-left:auto}
+    header > .actions{position:relative;z-index:4;display:flex;align-items:center;gap:5px;flex:0 0 auto;min-width:max-content}
+    header .news-window{position:relative!important;inset:auto!important;transform:none!important;z-index:1!important}
+    header .news-track{position:absolute!important;z-index:1!important}
+    .d2-floating-news{position:fixed!important;z-index:4800!important}
+
+    @media(max-width:1200px){
+      header > .news-ticker{max-width:300px!important;flex-basis:180px!important}
+    }
+    @media(max-width:900px){
+      header > .news-ticker{max-width:230px!important;flex-basis:150px!important}
+      header > nav{flex:0 1 auto}
+      header > .actions{gap:4px}
+    }
+    @media(max-width:720px){
+      header > .news-ticker{max-width:180px!important;flex-basis:120px!important}
+    }
+    @media(max-width:560px){
+      header > .news-ticker{display:none!important}
+    }
   `;
   document.head.appendChild(css);
 
@@ -3718,7 +3757,8 @@ setInterval(tick, 3000);
     if(timeline){timeline.style.position='absolute';timeline.style.left='12px';timeline.style.right='12px';timeline.style.bottom='12px';timeline.style.top='auto';}
     if(weather){weather.style.position='absolute';weather.style.right='12px';weather.style.bottom='88px';weather.style.left='auto';weather.style.top='auto';}
     [radar,timeline,weather].forEach(x=>x?.classList.remove('d2-win-hidden'));
-    q('.news-ticker')?.classList.remove('d2-win-hidden');
+    const nt=q('.news-ticker');
+    if(nt){nt.classList.remove('d2-win-hidden');nt.style.position='';nt.style.left='';nt.style.top='';nt.style.right='';nt.style.bottom='';nt.style.width='';nt.style.transform='';}
     state={...state,radar:true,timeline:true,weather:true,news:true};save();refreshWM();
     toast?.('2DANGER window layout reset.');
   };
