@@ -4,427 +4,95 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#05080f">
-<title>2DANGER — Live Weather Radar</title>
-<link rel="icon" id="favicon">
+<title>2DANGER</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <style>
 :root{
   --black:#03050a;
-  --panel:rgba(5,10,19,.96);
   --blue:#00aaff;
   --blue2:#19d7ff;
   --red:#ff173f;
   --white:#f4f8ff;
   --gray:#8d99aa;
 }
-
 *{box-sizing:border-box}
-
-html,body{
-  margin:0;
-  width:100%;
-  height:100%;
-  background:var(--black);
-  color:var(--white);
-  font-family:Arial,Helvetica,sans-serif;
-  overflow:hidden;
-}
-
-body{
-  background:
-    radial-gradient(circle at 10% 0%,rgba(0,170,255,.09),transparent 25%),
-    radial-gradient(circle at 90% 0%,rgba(255,23,63,.09),transparent 25%),
-    #03050a;
-}
-
-#app{
-  height:100vh;
-  display:grid;
-  grid-template-rows:62px 1fr;
-}
-
-header{
-  display:flex;
-  align-items:center;
-  gap:13px;
-  padding:0 13px;
-  background:#05080e;
-  border-bottom:1px solid #183b5b;
-  z-index:1000;
-}
-
+html,body{margin:0;width:100%;height:100%;background:var(--black);color:var(--white);font-family:Arial,Helvetica,sans-serif;overflow:hidden}
+body{background:radial-gradient(circle at 10% 0%,rgba(0,170,255,.09),transparent 25%),radial-gradient(circle at 90% 0%,rgba(255,23,63,.09),transparent 25%),#03050a}
+#app{height:100vh;display:grid;grid-template-rows:62px 1fr}
+header{display:flex;align-items:center;gap:13px;padding:0 13px;background:#05080e;border-bottom:1px solid #183b5b;z-index:1000}
 .brand-logo{width:61px;height:46px;flex:none}
 .brand{font-size:18px;font-weight:900;letter-spacing:2px;white-space:nowrap}
-.brand .two{color:var(--red)}
-.brand .danger{color:var(--blue2)}
-
-.live{
-  display:flex;
-  align-items:center;
-  gap:7px;
-  font-size:10px;
-  color:#b8c4d3;
-  letter-spacing:1px;
-}
-
-.live-dot{
-  width:8px;
-  height:8px;
-  border-radius:50%;
-  background:#ff294d;
-  animation:pulse 1.3s infinite;
-}
-
+.brand .two{color:var(--red)}.brand .danger{color:var(--blue2)}
+.live{display:flex;align-items:center;gap:7px;font-size:10px;color:#b8c4d3;letter-spacing:1px}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#ff294d;animation:pulse 1.3s infinite}
 @keyframes pulse{50%{opacity:.45}}
-
-nav{
-  display:flex;
-  flex:1;
-  gap:6px;
-  min-width:0;
-}
-
-button{
-  border:1px solid #18324d;
-  background:#07101c;
-  color:#d9e5f2;
-  border-radius:8px;
-  height:35px;
-  padding:0 12px;
-  font-weight:800;
-  font-size:11px;
-  cursor:pointer;
-}
-
+nav{display:flex;flex:1;gap:6px;min-width:0}
+button{border:1px solid #18324d;background:#07101c;color:#d9e5f2;border-radius:8px;height:35px;padding:0 12px;font-weight:800;font-size:11px;cursor:pointer}
 button:hover{border-color:var(--blue)}
-
-button.active{
-  color:#fff;
-  border-color:var(--blue);
-  background:linear-gradient(135deg,rgba(0,170,255,.18),rgba(255,23,63,.1));
-}
-
+button.active{color:#fff;border-color:var(--blue);background:linear-gradient(135deg,rgba(0,170,255,.18),rgba(255,23,63,.1))}
 .actions{display:flex;gap:6px}
 .icon{width:37px;padding:0;font-size:16px}
-
 #workspace{position:relative;min-height:0}
 #map{position:absolute;inset:0;background:#050912}
-
-.leaflet-control-zoom{
-  margin-right:10px!important;
-  margin-top:72px!important;
-}
-
-.leaflet-control-zoom a{
-  background:#07101c!important;
-  color:white!important;
-  border-color:#18324d!important;
-}
-
-.leaflet-control-attribution{
-  background:rgba(0,3,8,.8)!important;
-  color:#8090a0!important;
-  font-size:9px!important;
-}
-
+.leaflet-control-zoom{margin-right:10px!important;margin-top:72px!important}
+.leaflet-control-zoom a{background:#07101c!important;color:white!important;border-color:#18324d!important}
+.leaflet-control-attribution{background:rgba(0,3,8,.8)!important;color:#8090a0!important;font-size:9px!important}
 .leaflet-control-attribution a{color:#53caff!important}
-
-.panel{
-  position:absolute;
-  top:12px;
-  left:12px;
-  width:292px;
-  max-height:calc(100% - 24px);
-  overflow:auto;
-  background:var(--panel);
-  border:1px solid #173b5b;
-  border-radius:13px;
-  z-index:900;
-  box-shadow:0 16px 45px rgba(0,0,0,.64);
-  backdrop-filter:blur(14px);
-}
-
+.panel{position:absolute;top:12px;left:12px;width:292px;max-height:calc(100% - 24px);overflow:auto;background:rgba(5,10,19,.96);border:1px solid #173b5b;border-radius:13px;z-index:900;box-shadow:0 16px 45px rgba(0,0,0,.64);backdrop-filter:blur(14px)}
 .section{padding:13px;border-bottom:1px solid #14293d}
-
-h3{
-  margin:0 0 11px;
-  color:#a9bbce;
-  font-size:11px;
-  letter-spacing:2px;
-  text-transform:uppercase;
-}
-
-.row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-  margin:9px 0;
-}
-
+h3{margin:0 0 11px;color:#a9bbce;font-size:11px;letter-spacing:2px;text-transform:uppercase}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:9px 0}
 .label{font-size:12px;color:#e1eaf4}
 .small{color:var(--gray);font-size:10px}
-
-.toggle{
-  width:41px;
-  height:22px;
-  padding:2px;
-  border-radius:20px;
-  background:#0a1522;
-}
-
-.toggle i{
-  display:block;
-  width:16px;
-  height:16px;
-  border-radius:50%;
-  background:#647284;
-  transition:.17s;
-}
-
-.toggle.on{
-  background:rgba(0,170,255,.2);
-  border-color:#239bd0;
-}
-
-.toggle.on i{
-  transform:translateX(17px);
-  background:#25c8ff;
-}
-
+.toggle{width:41px;height:22px;padding:2px;border-radius:20px;background:#0a1522}
+.toggle i{display:block;width:16px;height:16px;border-radius:50%;background:#647284;transition:.17s}
+.toggle.on{background:rgba(0,170,255,.2);border-color:#239bd0}
+.toggle.on i{transform:translateX(17px);background:#25c8ff}
 input[type=range]{width:100%;accent-color:#149fe8}
-
-.seg{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:5px;
-}
-
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 .seg button{height:31px;font-size:10px;padding:0 4px}
 .seg button.active{border-color:var(--red)}
-
-.legend{
-  height:11px;
-  margin:9px 0 6px;
-  border-radius:20px;
-  background:linear-gradient(90deg,#00b7ff,#16e0ff 16%,#38ed7a 30%,#ffe348 46%,#ff9b29 61%,#ff3e30 75%,#ff174f 88%,#ff4df0);
-}
-
-.legend-labels{
-  display:flex;
-  justify-content:space-between;
-  color:#7f91a3;
-  font-size:9px;
-}
-
-.status{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:8px;
-  padding:9px;
-  border:1px solid #17334c;
-  border-radius:8px;
-  background:#07101a;
-}
-
-.notice{
-  background:rgba(255,23,63,.07);
-  border-left:2px solid var(--red);
-  padding:10px;
-  color:#bdc9d6;
-  font-size:10px;
-  line-height:1.5;
-}
-
-.badges{
-  position:absolute;
-  top:12px;
-  right:12px;
-  z-index:900;
-  display:flex;
-  gap:7px;
-}
-
-.badge{
-  background:rgba(3,7,13,.94);
-  border:1px solid #183b5b;
-  border-radius:20px;
-  padding:7px 11px;
-  font-size:10px;
-  color:#9eacbb;
-}
-
+.legend{height:11px;margin:9px 0 6px;border-radius:20px;background:linear-gradient(90deg,#00b7ff,#16e0ff 16%,#38ed7a 30%,#ffe348 46%,#ff9b29 61%,#ff3e30 75%,#ff174f 88%,#ff4df0)}
+.legend-labels{display:flex;justify-content:space-between;color:#7f91a3;font-size:9px}
+.status{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px;border:1px solid #17334c;border-radius:8px;background:#07101a}
+.notice{background:rgba(255,23,63,.07);border-left:2px solid var(--red);padding:10px;color:#bdc9d6;font-size:10px;line-height:1.5}
+.badges{position:absolute;top:12px;right:12px;z-index:900;display:flex;gap:7px}
+.badge{background:rgba(3,7,13,.94);border:1px solid #183b5b;border-radius:20px;padding:7px 11px;font-size:10px;color:#9eacbb}
 .badge b{color:#fff}
-
-.bottom{
-  position:absolute;
-  left:12px;
-  right:12px;
-  bottom:12px;
-  z-index:900;
-  background:rgba(5,9,16,.96);
-  border:1px solid #183b5b;
-  border-radius:13px;
-  padding:11px 13px;
-  backdrop-filter:blur(13px);
-}
-
+.bottom{position:absolute;left:12px;right:12px;bottom:12px;z-index:900;background:rgba(5,9,16,.96);border:1px solid #183b5b;border-radius:13px;padding:11px 13px;backdrop-filter:blur(13px)}
 .bottom.hidden{display:none}
-
-.timeline-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  margin-bottom:9px;
-}
-
-.time{font-size:11px;color:#abb9c8}
-.time b{color:white}
-
+.timeline-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px}
+.time{font-size:11px;color:#abb9c8}.time b{color:white}
 .timeline{position:relative;height:29px}
-.track{
-  position:absolute;
-  top:14px;
-  left:0;
-  right:0;
-  height:3px;
-  background:linear-gradient(90deg,#086ca2,#0e9fe7,#742337,#c8153c);
-  border-radius:20px;
-  opacity:.7;
-}
-
+.track{position:absolute;top:14px;left:0;right:0;height:3px;background:linear-gradient(90deg,#086ca2,#0e9fe7,#742337,#c8153c);border-radius:20px;opacity:.7}
 #scrub{position:absolute;top:3px;left:0;width:100%}
-
-#showHistory{
-  display:none;
-  position:absolute;
-  left:12px;
-  bottom:12px;
-  z-index:901;
-}
-
+#showHistory{display:none;position:absolute;left:12px;bottom:12px;z-index:901}
 #showHistory.visible{display:block}
-
-.splash{
-  position:fixed;
-  inset:0;
-  z-index:5000;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#000;
-  transition:.5s;
-}
-
+.splash{position:fixed;inset:0;z-index:5000;display:flex;align-items:center;justify-content:center;background:#000;transition:.5s}
 .splash.hide{opacity:0;visibility:hidden}
 .splash-card{text-align:center}
 .logo-large{width:min(80vw,530px);height:auto}
 .splash-text{margin-top:12px;color:#8594a6;font-size:12px;letter-spacing:5px}
-
-.loader{
-  width:230px;
-  height:3px;
-  background:#101a25;
-  border-radius:20px;
-  margin:16px auto;
-  overflow:hidden;
-}
-
-.loader i{
-  display:block;
-  width:43%;
-  height:100%;
-  background:linear-gradient(90deg,#00aaff,#18d3ff,#ff1744);
-  animation:load 1s infinite;
-}
-
-@keyframes load{
-  from{transform:translateX(-130%)}
-  to{transform:translateX(310%)}
-}
-
-.toast{
-  position:absolute;
-  left:50%;
-  bottom:98px;
-  transform:translate(-50%,20px);
-  opacity:0;
-  background:#060b12;
-  border:1px solid #1d4566;
-  border-radius:8px;
-  padding:9px 13px;
-  font-size:11px;
-  z-index:1200;
-  transition:.2s;
-}
-
+.loader{width:230px;height:3px;background:#101a25;border-radius:20px;margin:16px auto;overflow:hidden}
+.loader i{display:block;width:43%;height:100%;background:linear-gradient(90deg,#00aaff,#18d3ff,#ff1744);animation:load 1s infinite}
+@keyframes load{from{transform:translateX(-130%)}to{transform:translateX(310%)}}
+.toast{position:absolute;left:50%;bottom:98px;transform:translate(-50%,20px);opacity:0;background:#060b12;border:1px solid #1d4566;border-radius:8px;padding:9px 13px;font-size:11px;z-index:1200;transition:.2s}
 .toast.show{opacity:1;transform:translate(-50%,0)}
-
-.severe-list{
-  max-height:230px;
-  overflow:auto;
-  margin-top:8px;
-}
-
-.severe-item{
-  display:block;
-  width:100%;
-  height:auto;
-  min-height:48px;
-  margin:6px 0;
-  padding:8px 10px;
-  text-align:left;
-  border-color:#573044;
-  background:#120b12;
-}
-
+.severe-list{max-height:230px;overflow:auto;margin-top:8px}
+.severe-item{display:block;width:100%;height:auto;min-height:48px;margin:6px 0;padding:8px 10px;text-align:left;border-color:#573044;background:#120b12}
 .severe-item strong{display:block;color:#fff;font-size:11px}
 .severe-item span{display:block;margin-top:4px;color:#b8aab2;font-size:10px}
-
-#sevBanner{
-  position:absolute;
-  top:12px;
-  left:50%;
-  transform:translate(-50%,-160%);
-  z-index:1300;
-  width:min(92vw,470px);
-  padding:11px 14px;
-  border-radius:12px;
-  border:1px solid #ff3c5c;
-  background:#16070b;
-  box-shadow:0 0 28px rgba(255,23,63,.45);
-  transition:transform .35s;
-  pointer-events:none;
-  opacity:0;
-}
-
-#sevBanner.show{
-  transform:translate(-50%,0);
-  pointer-events:auto;
-  opacity:1;
-}
-
+#sevBanner{position:absolute;top:12px;left:50%;transform:translate(-50%,-160%);z-index:1300;width:min(92vw,470px);padding:11px 14px;border-radius:12px;border:1px solid #ff3c5c;background:#16070b;box-shadow:0 0 28px rgba(255,23,63,.45);transition:transform .35s;pointer-events:none;opacity:0}
+#sevBanner.show{transform:translate(-50%,0);pointer-events:auto;opacity:1}
 #sevBanner b{display:block;font-size:13px;letter-spacing:2px}
 #sevBanner span{display:block;margin-top:4px;font-size:11px;color:#ffd3da}
-
-.sev-marker{
-  width:24px;
-  height:24px;
-  border-radius:50%;
-  background:rgba(255,23,63,.72);
-  border:3px solid white;
-  box-shadow:0 0 18px #ff173f;
-}
-
+.sev-marker{width:24px;height:24px;border-radius:50%;background:rgba(255,23,63,.72);border:3px solid white;box-shadow:0 0 18px #ff173f}
 @media(max-width:700px){
   .brand,.live{display:none}
   nav button:nth-child(n+4){display:none}
   .panel{width:240px}
 }
-
 @media(max-width:500px){
   #app{grid-template-rows:56px 1fr}
   header{padding:0 8px;gap:6px}
@@ -515,7 +183,7 @@ input[type=range]{width:100%;accent-color:#149fe8}
     </section>
 
     <section class="section">
-      <div class="status"><b id="radarStatus">Connecting...</b><span class="small" id="updatedText">—</span></div>
+      <div class="status"><b id="radarStatus">Connecting…</b><span class="small" id="updatedText">—</span></div>
     </section>
 
     <section class="section">
@@ -525,20 +193,16 @@ input[type=range]{width:100%;accent-color:#149fe8}
     </section>
 
     <section class="section">
-      <div class="notice">Radar and storm reports may be delayed or unavailable. Reported storms are not live detection. For warnings and life-safety decisions, use official National Weather Service alerts.</div>
+      <div class="notice">Radar and storm reports may be delayed or unavailable. Reports are not live storm detection. For warnings and life-safety decisions, use official National Weather Service alerts.</div>
     </section>
 
     <section class="section">
-      <h3>Severe Storms Today</h3>
+      <h3>5 Most Recent Storm Reports</h3>
       <div class="row">
-        <span class="label">Reported severe events</span>
+        <span class="label">Available reports</span>
         <span class="small" id="stormCount">Loading…</span>
       </div>
-      <div class="row">
-        <label class="small" for="stormDate">Day</label>
-        <input id="stormDate" type="date" style="max-width:150px">
-      </div>
-      <div class="small" id="stormListStatus">Loading reported events…</div>
+      <div class="small" id="stormListStatus">Loading recent reports…</div>
       <div class="severe-list" id="severeList"></div>
     </section>
   </aside>
@@ -551,11 +215,11 @@ input[type=range]{width:100%;accent-color:#149fe8}
 
   <div class="bottom" id="historyBar">
     <div class="timeline-head">
-      <div class="time">RADAR HISTORY · <b id="timelineTime">Loading...</b></div>
+      <div class="time">RADAR HISTORY · <b id="timelineTime">Loading…</b></div>
       <div>
         <button id="playBtn">▶ Play</button>
         <button id="latestBtn">Live</button>
-        <button id="hideHistoryBtn" aria-label="Hide radar history">Hide history</button>
+        <button id="hideHistoryBtn">Hide history</button>
       </div>
     </div>
     <div class="timeline">
@@ -587,7 +251,6 @@ const satelliteLayer = L.tileLayer(
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
   {attribution:"Tiles © Esri",maxZoom:19}
 );
-
 const labelsLayer = L.tileLayer(
   "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
   {attribution:"© CARTO",maxZoom:19,opacity:.8}
@@ -624,21 +287,16 @@ async function loadRadar(){
   $("radarStatus").textContent = "Connecting…";
 
   try{
-    const response = await fetch(
-      "https://api.rainviewer.com/public/weather-maps.json",
-      {cache:"no-store"}
-    );
-
+    const response = await fetch("https://api.rainviewer.com/public/weather-maps.json",{cache:"no-store"});
     if(!response.ok) throw new Error("Radar feed unavailable");
 
     const data = await response.json();
     radarHost = data.host || "https://tilecache.rainviewer.com";
     radarFrames = (data.radar?.past || []).slice(-13);
-
     if(!radarFrames.length) throw new Error("No radar frames");
 
-    selectedIndex = radarFrames.length - 1;
-    $("scrub").max = String(radarFrames.length - 1);
+    selectedIndex = radarFrames.length-1;
+    $("scrub").max = String(radarFrames.length-1);
     renderRadar();
 
     $("radarStatus").textContent = "Radar live";
@@ -660,42 +318,36 @@ function renderRadar(){
   const url = radarHost + frame.path + "/256/{z}/{x}/{y}/2/1_1.png";
 
   if(radarLayer && map.hasLayer(radarLayer)) map.removeLayer(radarLayer);
-
   radarLayer = L.tileLayer(url,{
     opacity:Number($("opacity").value)/100,
-    maxNativeZoom:7,
-    maxZoom:8,
-    zIndex:300
+    maxNativeZoom:7,maxZoom:8,zIndex:300
   });
 
-  if(activeMode === "radar" && $("radarToggle").classList.contains("on")){
-    radarLayer.addTo(map);
-  }
+  if(activeMode==="radar" && $("radarToggle").classList.contains("on")) radarLayer.addTo(map);
 
-  const age = radarFrames.length - 1 - selectedIndex;
-  $("frameText").textContent = age === 0 ? "latest" : "-" + age*10 + " min";
+  const age = radarFrames.length-1-selectedIndex;
+  $("frameText").textContent = age===0 ? "latest" : "-"+age*10+" min";
   $("timelineTime").textContent = formatTime(frame.time);
   $("updatedText").textContent = formatTime(frame.time);
   $("scrub").value = String(selectedIndex);
 }
 
 $("radarToggle").addEventListener("click",()=>{
-  const button = $("radarToggle");
-  const enabled = !button.classList.contains("on");
+  const button=$("radarToggle");
+  const enabled=!button.classList.contains("on");
   button.classList.toggle("on",enabled);
-
-  if(!radarLayer) return;
-  if(enabled && activeMode === "radar") radarLayer.addTo(map);
-  else if(map.hasLayer(radarLayer)) map.removeLayer(radarLayer);
+  if(!radarLayer)return;
+  if(enabled&&activeMode==="radar")radarLayer.addTo(map);
+  else if(map.hasLayer(radarLayer))map.removeLayer(radarLayer);
 });
 
 $("opacity").addEventListener("input",()=>{
-  $("opacityText").textContent = $("opacity").value + "%";
-  if(radarLayer) radarLayer.setOpacity(Number($("opacity").value)/100);
+  $("opacityText").textContent=$("opacity").value+"%";
+  if(radarLayer)radarLayer.setOpacity(Number($("opacity").value)/100);
 });
 
 $("scrub").addEventListener("input",()=>{
-  selectedIndex = Number($("scrub").value);
+  selectedIndex=Number($("scrub").value);
   renderRadar();
 });
 
@@ -703,41 +355,36 @@ document.querySelectorAll("[data-frame]").forEach(button=>{
   button.addEventListener("click",()=>{
     document.querySelectorAll("[data-frame]").forEach(item=>item.classList.remove("active"));
     button.classList.add("active");
-
-    if(!radarFrames.length) return;
-
-    if(button.dataset.frame === "latest") selectedIndex = radarFrames.length-1;
-    if(button.dataset.frame === "older") selectedIndex = Math.max(0,radarFrames.length-2);
-    if(button.dataset.frame === "oldest") selectedIndex = Math.max(0,radarFrames.length-3);
-
+    if(!radarFrames.length)return;
+    if(button.dataset.frame==="latest")selectedIndex=radarFrames.length-1;
+    if(button.dataset.frame==="older")selectedIndex=Math.max(0,radarFrames.length-2);
+    if(button.dataset.frame==="oldest")selectedIndex=Math.max(0,radarFrames.length-3);
     renderRadar();
   });
 });
 
 $("playBtn").addEventListener("click",()=>{
-  if(!radarFrames.length) return;
-
-  playing = !playing;
-  $("playBtn").textContent = playing ? "❚❚ Pause" : "▶ Play";
+  if(!radarFrames.length)return;
+  playing=!playing;
+  $("playBtn").textContent=playing?"❚❚ Pause":"▶ Play";
   clearInterval(playTimer);
+  if(!playing)return;
 
-  if(!playing) return;
-
-  let index = Math.max(0,radarFrames.length-8);
-  selectedIndex = index;
+  let index=Math.max(0,radarFrames.length-8);
+  selectedIndex=index;
   renderRadar();
 
-  playTimer = setInterval(()=>{
+  playTimer=setInterval(()=>{
     index++;
-    if(index >= radarFrames.length) index = Math.max(0,radarFrames.length-8);
-    selectedIndex = index;
+    if(index>=radarFrames.length)index=Math.max(0,radarFrames.length-8);
+    selectedIndex=index;
     renderRadar();
   },700);
 });
 
 $("latestBtn").addEventListener("click",()=>{
-  if(!radarFrames.length) return;
-  selectedIndex = radarFrames.length-1;
+  if(!radarFrames.length)return;
+  selectedIndex=radarFrames.length-1;
   renderRadar();
 });
 
@@ -745,144 +392,82 @@ $("hideHistoryBtn").addEventListener("click",()=>{
   $("historyBar").classList.add("hidden");
   $("showHistory").classList.add("visible");
 });
-
 $("showHistory").addEventListener("click",()=>{
   $("historyBar").classList.remove("hidden");
   $("showHistory").classList.remove("visible");
 });
-
 $("refreshBtn").addEventListener("click",loadRadar);
 
 $("locateBtn").addEventListener("click",()=>{
-  if(!navigator.geolocation){
-    toast("Location is unavailable in this browser.");
-    return;
-  }
-
+  if(!navigator.geolocation){toast("Location is unavailable in this browser.");return;}
   navigator.geolocation.getCurrentPosition(position=>{
-    const lat = position.coords.latitude;
-    const lon = position.coords.longitude;
-
-    L.circleMarker([lat,lon],{
-      radius:7,color:"#fff",weight:2,fillColor:"#00aaff",fillOpacity:1
-    }).addTo(map);
-
-    L.circle([lat,lon],{
-      radius:position.coords.accuracy,color:"#00aaff",weight:1,fill:false
-    }).addTo(map);
-
+    const lat=position.coords.latitude,lon=position.coords.longitude;
+    L.circleMarker([lat,lon],{radius:7,color:"#fff",weight:2,fillColor:"#00aaff",fillOpacity:1}).addTo(map);
+    L.circle([lat,lon],{radius:position.coords.accuracy,color:"#00aaff",weight:1,fill:false}).addTo(map);
     map.setView([lat,lon],Math.max(map.getZoom(),6),{animate:true});
     toast("Centered on your location.");
-  },()=>{
-    toast("Location permission denied or unavailable.");
-  },{enableHighAccuracy:true,timeout:8000,maximumAge:120000});
+  },()=>toast("Location permission denied or unavailable."),{enableHighAccuracy:true,timeout:8000,maximumAge:120000});
 });
 
 $("darkToggle").addEventListener("click",()=>{
-  const button = $("darkToggle");
-  const enabled = !button.classList.contains("on");
+  const button=$("darkToggle");
+  const enabled=!button.classList.contains("on");
   button.classList.toggle("on",enabled);
-  $("map").style.filter = enabled ? "brightness(.58) saturate(.9) contrast(1.05)" : "none";
+  $("map").style.filter=enabled?"brightness(.58) saturate(.9) contrast(1.05)":"none";
 });
 
 $("followToggle").addEventListener("click",()=>{
   $("followToggle").classList.toggle("on");
-  if($("followToggle").classList.contains("on")) $("locateBtn").click();
+  if($("followToggle").classList.contains("on"))$("locateBtn").click();
 });
 
-/* Storm reports: date-filtered, newest first. */
-function localDateString(date){
-  const year = date.getFullYear();
-  const month = String(date.getMonth()+1).padStart(2,"0");
-  const day = String(date.getDate()).padStart(2,"0");
-  return `${year}-${month}-${day}`;
-}
-
+/* Five most recent dated storm reports, newest first. */
 function parseReportTime(properties){
-  const raw =
-    properties.BEGIN_DATE ||
-    properties.UTC_DATETIME ||
-    properties.DATE ||
-    properties.BEGIN_TIME ||
-    properties.ISSUED ||
-    "";
-
-  if(typeof raw === "number"){
-    return raw > 1e12 ? raw : raw * 1000;
-  }
-
-  const parsed = Date.parse(raw);
-  return Number.isFinite(parsed) ? parsed : 0;
+  const raw=properties.BEGIN_DATE||properties.UTC_DATETIME||properties.DATE||properties.BEGIN_TIME||properties.ISSUED||"";
+  if(typeof raw==="number")return raw>1e12?raw:raw*1000;
+  const parsed=Date.parse(raw);
+  return Number.isFinite(parsed)?parsed:0;
 }
-
 function reportType(properties){
-  return String(
-    properties.EVENT_TYPE ||
-    properties.TYPE ||
-    properties.EVENT ||
-    properties.REPORT_TYPE ||
-    "Severe storm report"
-  );
+  return String(properties.EVENT_TYPE||properties.TYPE||properties.EVENT||properties.REPORT_TYPE||"Storm report");
 }
-
 function reportCoordinates(feature){
-  const geometry = feature.geometry;
-  if(!geometry) return null;
-
-  if(geometry.type === "Point" && Array.isArray(geometry.coordinates)){
-    return [geometry.coordinates[1],geometry.coordinates[0]];
-  }
-
-  return null;
+  const coordinates=feature.geometry?.coordinates;
+  if(feature.geometry?.type!=="Point"||!Array.isArray(coordinates))return null;
+  return [coordinates[1],coordinates[0]];
 }
-
 function safeText(value){
-  return String(value ?? "").replace(/[&<>"']/g,character=>({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[character]));
+  return String(value??"").replace(/[&<>"']/g,character=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[character]));
 }
-
 function playClickAlert(){
   try{
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if(!AudioContextClass) return;
+    const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+    if(!AudioContextClass)return;
+    alertAudio=alertAudio||new AudioContextClass();
+    if(alertAudio.state==="suspended")alertAudio.resume();
 
-    alertAudio = alertAudio || new AudioContextClass();
-    if(alertAudio.state === "suspended") alertAudio.resume();
-
-    const now = alertAudio.currentTime;
-    const oscillator = alertAudio.createOscillator();
-    const gain = alertAudio.createGain();
-
-    oscillator.type = "sawtooth";
+    const now=alertAudio.currentTime;
+    const oscillator=alertAudio.createOscillator();
+    const gain=alertAudio.createGain();
+    oscillator.type="sawtooth";
     oscillator.frequency.setValueAtTime(880,now);
     oscillator.frequency.setValueAtTime(660,now+.3);
     gain.gain.setValueAtTime(.0001,now);
     gain.gain.exponentialRampToValueAtTime(.12,now+.04);
     gain.gain.setValueAtTime(.12,now+.55);
     gain.gain.exponentialRampToValueAtTime(.0001,now+.7);
-
     oscillator.connect(gain);
     gain.connect(alertAudio.destination);
     oscillator.start(now);
     oscillator.stop(now+.75);
-  }catch(error){
-    console.warn("Alert sound unavailable",error);
-  }
+  }catch(error){console.warn("Alert sound unavailable:",error);}
 }
-
 function showStormEvent(event){
   playClickAlert();
+  if(severeMarker)map.removeLayer(severeMarker);
 
-  if(severeMarker) map.removeLayer(severeMarker);
-
-  severeMarker = L.marker(event.latlng,{
-    icon:L.divIcon({
-      className:"",
-      html:'<div class="sev-marker"></div>',
-      iconSize:[24,24],
-      iconAnchor:[12,12]
-    })
+  severeMarker=L.marker(event.latlng,{
+    icon:L.divIcon({className:"",html:'<div class="sev-marker"></div>',iconSize:[24,24],iconAnchor:[12,12]})
   }).addTo(map);
 
   map.flyTo(event.latlng,Math.max(map.getZoom(),7),{duration:1.25});
@@ -890,84 +475,53 @@ function showStormEvent(event){
     `<b>${safeText(event.type)}</b><br>${safeText(event.timeText)}<br><small>Reported event; not a live warning.</small>`
   ).openPopup();
 
-  $("sevTitle").textContent = "⚠ REPORTED STORM";
-  $("sevSub").textContent = `${event.type} · ${event.timeText}`;
+  $("sevTitle").textContent="⚠ REPORTED STORM";
+  $("sevSub").textContent=`${event.type} · ${event.timeText}`;
   $("sevBanner").classList.add("show");
-
   clearTimeout(showStormEvent.timer);
-  showStormEvent.timer = setTimeout(()=>$("sevBanner").classList.remove("show"),7000);
+  showStormEvent.timer=setTimeout(()=>$("sevBanner").classList.remove("show"),7000);
 }
-
 async function loadSevereStorms(){
-  const list = $("severeList");
-  const dateInput = $("stormDate");
-  const selectedDate = dateInput.value;
-
-  $("stormListStatus").textContent = "Loading reported events…";
-  $("stormCount").textContent = "…";
+  const list=$("severeList");
   list.replaceChildren();
+  $("stormCount").textContent="…";
+  $("stormListStatus").textContent="Loading recent reports…";
 
   try{
-    const url =
-      "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/" +
-      "Storm_Reports/FeatureServer/0/query" +
-      "?where=1%3D1&outFields=*&returnGeometry=true&f=geojson&resultRecordCount=500";
+    const url="https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/Storm_Reports/FeatureServer/0/query?where=1%3D1&outFields=*&returnGeometry=true&f=geojson&resultRecordCount=500";
+    const response=await fetch(url);
+    if(!response.ok)throw new Error("Storm report service unavailable");
 
-    const response = await fetch(url);
-    if(!response.ok) throw new Error("Storm report service unavailable");
+    const data=await response.json();
+    const events=(data.features||[]).map(feature=>{
+      const properties=feature.properties||{};
+      const latlng=reportCoordinates(feature);
+      const timestamp=parseReportTime(properties);
+      if(!latlng||!timestamp)return null;
+      return {
+        latlng,timestamp,
+        type:reportType(properties),
+        timeText:new Date(timestamp).toLocaleString([],{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})
+      };
+    }).filter(Boolean).sort((a,b)=>b.timestamp-a.timestamp).slice(0,5);
 
-    const data = await response.json();
-    const allEvents = (data.features || [])
-      .map(feature=>{
-        const properties = feature.properties || {};
-        const latlng = reportCoordinates(feature);
-        const timestamp = parseReportTime(properties);
-
-        if(!latlng || !timestamp) return null;
-
-        return {
-          latlng,
-          timestamp,
-          type:reportType(properties),
-          timeText:new Date(timestamp).toLocaleTimeString([],{
-            hour:"numeric",minute:"2-digit"
-          }),
-          date:localDateString(new Date(timestamp))
-        };
-      })
-      .filter(Boolean);
-
-    const events = allEvents
-      .filter(event=>event.date === selectedDate)
-      .sort((a,b)=>b.timestamp-a.timestamp);
-
-    $("stormCount").textContent = String(events.length);
-
+    $("stormCount").textContent=String(events.length);
     if(!events.length){
-      $("stormListStatus").textContent =
-        allEvents.length
-          ? "No reported events for this day."
-          : "No dated reports were returned.";
+      $("stormListStatus").textContent="No recent dated reports were returned.";
       return;
     }
 
-    $("stormListStatus").textContent =
-      "Newest first · click an event to play the alert and go to its location.";
-
-    const fragment = document.createDocumentFragment();
+    $("stormListStatus").textContent="Newest first · click a report to sound the alarm and go to its location.";
+    const fragment=document.createDocumentFragment();
 
     events.forEach(event=>{
-      const button = document.createElement("button");
-      button.className = "severe-item";
-      button.type = "button";
-
-      const title = document.createElement("strong");
-      title.textContent = event.type;
-
-      const details = document.createElement("span");
-      details.textContent =
-        `${event.timeText} · ${event.latlng[0].toFixed(2)}, ${event.latlng[1].toFixed(2)}`;
-
+      const button=document.createElement("button");
+      button.className="severe-item";
+      button.type="button";
+      const title=document.createElement("strong");
+      title.textContent=event.type;
+      const details=document.createElement("span");
+      details.textContent=`${event.timeText} · ${event.latlng[0].toFixed(2)}, ${event.latlng[1].toFixed(2)}`;
       button.append(title,details);
       button.addEventListener("click",()=>showStormEvent(event));
       fragment.appendChild(button);
@@ -976,78 +530,53 @@ async function loadSevereStorms(){
     list.appendChild(fragment);
   }catch(error){
     console.error("Storm reports could not load:",error);
-    $("stormCount").textContent = "—";
-    $("stormListStatus").textContent =
-      "Storm report feed unavailable. The map is still usable.";
+    $("stormCount").textContent="—";
+    $("stormListStatus").textContent="Recent reports unavailable. The map is still usable.";
   }
 }
-
-$("stormDate").value = localDateString(new Date());
-$("stormDate").addEventListener("change",loadSevereStorms);
 loadSevereStorms();
 
 function clearMapLayers(){
-  [satelliteLayer,labelsLayer].forEach(layer=>{
-    if(map.hasLayer(layer)) map.removeLayer(layer);
-  });
-
-  if(radarLayer && map.hasLayer(radarLayer)) map.removeLayer(radarLayer);
+  [satelliteLayer,labelsLayer].forEach(layer=>{if(map.hasLayer(layer))map.removeLayer(layer);});
+  if(radarLayer&&map.hasLayer(radarLayer))map.removeLayer(radarLayer);
 }
-
 function selectMode(mode){
-  activeMode = mode;
-
-  document.querySelectorAll("nav [data-mode]").forEach(button=>{
-    button.classList.toggle("active",button.dataset.mode === mode);
-  });
-
-  $("modeBadge").textContent = mode.toUpperCase();
+  activeMode=mode;
+  document.querySelectorAll("nav [data-mode]").forEach(button=>button.classList.toggle("active",button.dataset.mode===mode));
+  $("modeBadge").textContent=mode.toUpperCase();
   clearMapLayers();
 
-  if(mode === "radar"){
-    if(radarLayer && $("radarToggle").classList.contains("on")) radarLayer.addTo(map);
-  }else if(mode === "satellite"){
+  if(mode==="radar"){
+    if(radarLayer&&$("radarToggle").classList.contains("on"))radarLayer.addTo(map);
+  }else if(mode==="satellite"){
     satelliteLayer.addTo(map);
     labelsLayer.addTo(map);
-  }else if(mode === "alerts"){
+  }else if(mode==="alerts"){
     loadNwsAlerts();
-  }else if(mode === "reports"){
+  }else if(mode==="reports"){
     loadStormReportMarkers(false);
-  }else if(mode === "tornado"){
+  }else if(mode==="tornado"){
     loadStormReportMarkers(true);
   }
 }
-
-document.querySelectorAll("nav [data-mode]").forEach(button=>{
-  button.addEventListener("click",()=>selectMode(button.dataset.mode));
-});
+document.querySelectorAll("nav [data-mode]").forEach(button=>button.addEventListener("click",()=>selectMode(button.dataset.mode)));
 
 async function loadNwsAlerts(){
   try{
-    const center = map.getCenter();
-    const response = await fetch(
-      `https://api.weather.gov/alerts/active?point=${center.lat},${center.lng}`,
-      {headers:{"Accept":"application/geo+json"}}
-    );
+    const center=map.getCenter();
+    const response=await fetch(`https://api.weather.gov/alerts/active?point=${center.lat},${center.lng}`,{headers:{"Accept":"application/geo+json"}});
+    if(!response.ok)throw new Error("NWS alert service unavailable");
+    const data=await response.json();
+    let count=0;
 
-    if(!response.ok) throw new Error("NWS alert service unavailable");
-    const data = await response.json();
-    let count = 0;
-
-    (data.features || []).forEach(feature=>{
-      if(!feature.geometry) return;
+    (data.features||[]).forEach(feature=>{
+      if(!feature.geometry)return;
       count++;
-
-      L.geoJSON(feature,{
-        style:{color:"#ff173f",weight:2,fillColor:"#ff173f",fillOpacity:.16}
-      }).bindPopup(
-        `<b>${safeText(feature.properties?.event || "NWS alert")}</b><br>`+
-        `${safeText(feature.properties?.headline || "")}<br>`+
-        `${safeText(feature.properties?.areaDesc || "")}`
-      ).addTo(map);
+      L.geoJSON(feature,{style:{color:"#ff173f",weight:2,fillColor:"#ff173f",fillOpacity:.16}})
+        .bindPopup(`<b>${safeText(feature.properties?.event||"NWS alert")}</b><br>${safeText(feature.properties?.headline||"")}<br>${safeText(feature.properties?.areaDesc||"")}`)
+        .addTo(map);
     });
-
-    toast(count ? `${count} active NWS alert(s).` : "No active NWS alerts here.");
+    toast(count?`${count} active NWS alert(s).`:"No active NWS alerts here.");
   }catch(error){
     console.warn(error);
     toast("NWS alerts unavailable right now.");
@@ -1056,53 +585,37 @@ async function loadNwsAlerts(){
 
 async function loadStormReportMarkers(tornadoOnly){
   stormMarkers.forEach(marker=>map.removeLayer(marker));
-  stormMarkers = [];
+  stormMarkers=[];
 
   try{
-    const url =
-      "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/" +
-      "Storm_Reports/FeatureServer/0/query" +
-      "?where=1%3D1&outFields=*&returnGeometry=true&f=geojson&resultRecordCount=500";
+    const url="https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/Storm_Reports/FeatureServer/0/query?where=1%3D1&outFields=*&returnGeometry=true&f=geojson&resultRecordCount=500";
+    const response=await fetch(url);
+    if(!response.ok)throw new Error("Storm report service unavailable");
+    const data=await response.json();
+    let count=0;
 
-    const response = await fetch(url);
-    if(!response.ok) throw new Error("Storm report service unavailable");
-
-    const data = await response.json();
-    let count = 0;
-
-    (data.features || []).forEach(feature=>{
-      const properties = feature.properties || {};
-      const type = reportType(properties);
-      if(tornadoOnly && !/tornado/i.test(type)) return;
-
-      const latlng = reportCoordinates(feature);
-      if(!latlng) return;
+    (data.features||[]).forEach(feature=>{
+      const properties=feature.properties||{};
+      const type=reportType(properties);
+      if(tornadoOnly&&!/tornado/i.test(type))return;
+      const latlng=reportCoordinates(feature);
+      if(!latlng)return;
       count++;
 
-      const marker = L.circleMarker(latlng,{
-        radius:6,
-        color:"#fff",
-        weight:1,
-        fillColor:tornadoOnly ? "#ff173f" : "#ff9b29",
+      const marker=L.circleMarker(latlng,{
+        radius:6,color:"#fff",weight:1,
+        fillColor:tornadoOnly?"#ff173f":"#ff9b29",
         fillOpacity:.95
-      }).bindPopup(
-        `<b>${safeText(type)}</b><br><small>Reported event, not live detection.</small>`
-      ).addTo(map);
+      }).bindPopup(`<b>${safeText(type)}</b><br><small>Reported event, not live detection.</small>`).addTo(map);
 
       stormMarkers.push(marker);
     });
-
-    toast(count ? `${count} report(s) shown.` : "No matching reports returned.");
+    toast(count?`${count} report(s) shown.`:"No matching reports returned.");
   }catch(error){
     console.warn(error);
     toast("Storm report feed unavailable right now.");
   }
 }
-
-/* Favicon */
-const faviconSvg =
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="16" fill="#03050a"/><path d="M17 41C7 29 10 17 22 15c11-2 20 2 31 6-12-3-22-5-29 0-7 5-4 12 3 20l-5 4z" fill="#ff173f"/><path d="M15 42C5 30 7 19 16 14c8-5 19-3 28 0-11-4-20-4-27 0-10 5-10 19-2 28" fill="none" stroke="#00aaff" stroke-width="3"/><text x="50" y="62" text-anchor="middle" fill="#00aaff" font-size="17" font-weight="900" font-family="Arial">DANGER</text></svg>`;
-$("favicon").href = "data:image/svg+xml," + encodeURIComponent(faviconSvg);
 
 setTimeout(loadRadar,400);
 setInterval(loadRadar,5*60*1000);
