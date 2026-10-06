@@ -2280,9 +2280,10 @@ setInterval(
     .d2-storm-card{border:1px solid #193650;border-radius:9px;background:linear-gradient(120deg,rgba(0,170,255,.07),rgba(255,23,63,.06));padding:9px;cursor:pointer}
     .d2-storm-card:hover{border-color:#00aaff}
     .d2-storm-card b{font-size:11px}.d2-storm-card span{display:block;color:#8294a7;font-size:9px;margin-top:3px}
-    .d2-overlay{position:absolute;inset:0;z-index:2200;background:rgba(1,4,8,.78);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:16px}
+    .d2-overlay{position:fixed;inset:0;z-index:10000!important;background:rgba(1,4,8,.78);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;padding:16px}
     .d2-overlay.show{display:flex}
-    .d2-modal{width:min(920px,96vw);max-height:88vh;overflow:auto;border:1px solid #1a4162;border-radius:14px;background:#07101a;box-shadow:0 25px 80px #000d}
+    body.d2-modal-open{overflow:hidden!important}
+    .d2-modal{position:relative;z-index:10001;width:min(920px,96vw);max-height:88vh;overflow:auto;border:1px solid #1a4162;border-radius:14px;background:#07101a;box-shadow:0 25px 80px #000d}
     .d2-modal-head{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:#07101a;border-bottom:1px solid #163149}
     .d2-modal-head b{letter-spacing:2px;font-size:12px}
     .d2-modal-body{padding:12px}
@@ -2380,10 +2381,10 @@ setInterval(
   const overlay=document.createElement('div');
   overlay.className='d2-overlay';
   overlay.innerHTML=`<div class="d2-modal"><div class="d2-modal-head"><b id="d2ModalTitle">2DANGER</b><button id="d2CloseModal" class="d2-window-btn close" title="Close" aria-label="Close">×</button></div><div class="d2-modal-body" id="d2ModalBody"></div></div></div>`;
-  qs('#workspace')?.appendChild(overlay);
+  document.body.appendChild(overlay);
   const modalTitle=$('d2ModalTitle'), modalBody=$('d2ModalBody');
-  $('d2CloseModal').onclick=()=>overlay.classList.remove('show');
-  overlay.addEventListener('click',e=>{if(e.target===overlay) overlay.classList.remove('show');});
+  $('d2CloseModal').onclick=()=>{overlay.classList.remove('show');document.body.classList.remove('d2-modal-open');};
+  overlay.addEventListener('click',e=>{if(e.target===overlay){overlay.classList.remove('show');document.body.classList.remove('d2-modal-open');}});
 
   function initials(name){return (name||'?').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase()||'?';}
   function session(){try{return JSON.parse(localStorage.getItem('2danger_session_v1')||'null')}catch(e){return null;}}
@@ -2482,7 +2483,7 @@ setInterval(
   document.addEventListener('click',e=>{if(!profWrap.contains(e.target))menu.classList.remove('show');});
   renderProfileMenu();updateAvatar();
 
-  function openModal(title,html){modalTitle.textContent=title;modalBody.innerHTML=html;overlay.classList.add('show');}
+  function openModal(title,html){modalTitle.textContent=title;modalBody.innerHTML=html;overlay.classList.add('show');document.body.classList.add('d2-modal-open');}
   window.DANGER_FEATURES=window.DANGER_FEATURES||{};
   window.DANGER_FEATURES.showSevereRain=function(areas){
     const arr=Array.isArray(areas)?areas:[];
