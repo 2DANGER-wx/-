@@ -3180,8 +3180,6 @@ setInterval(tick, 3000);
   const css=document.createElement('style');
   css.textContent=`
     .d2-next-tools{display:flex;align-items:center;gap:6px;margin-left:8px}
-    .d2-search{height:35px;width:min(220px,22vw);padding:0 10px;border:1px solid #18324d;border-radius:8px;background:#07101c;color:#fff;outline:none;font-size:11px}
-    .d2-search:focus{border-color:#00aaff;box-shadow:0 0 12px rgba(0,170,255,.15)}
     .d2-weather-card{position:absolute;right:12px;bottom:88px;z-index:880;width:280px;padding:12px;border:1px solid #183b5b;border-radius:13px;background:rgba(5,10,19,.95);box-shadow:0 15px 45px #0009;backdrop-filter:blur(12px)}
     .d2-weather-card .head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
     .d2-weather-card .place{font-size:11px;font-weight:800;letter-spacing:.5px}
@@ -3202,8 +3200,8 @@ setInterval(tick, 3000);
     .d2-toast-blue{border-color:#1a5c7c!important}
     .d2-focus .panel,.d2-focus .bottom{opacity:.16;transition:.2s}
     .d2-focus .panel:hover,.d2-focus .bottom:hover{opacity:1}
-    @media(max-width:900px){.d2-search{width:150px}.d2-weather-card{width:250px}}
-    @media(max-width:700px){.d2-search{display:none}.d2-weather-card{left:8px;right:8px;width:auto;bottom:88px}.d2-next-tools{margin-left:0}}
+    @media(max-width:900px){.d2-weather-card{width:250px}}
+    @media(max-width:700px){.d2-weather-card{left:8px;right:8px;width:auto;bottom:88px}.d2-next-tools{margin-left:0}}
   `;
   document.head.appendChild(css);
 
@@ -3212,18 +3210,15 @@ setInterval(tick, 3000);
   const nav=document.querySelector('nav');
   if(!topbar || !nav) return;
 
-  // Search bar
+  // Compact utility controls only. The city/place search was removed because it was unreliable.
+  // The NEWS ticker in the main header now occupies that space instead.
   const tools=document.createElement('div');
   tools.className='d2-next-tools';
   tools.innerHTML=`
-    <input id="d2LocationSearch" class="d2-search" placeholder="Search city or place..." autocomplete="off">
-    <button id="d2SearchBtn" class="icon" title="Search location">⌕</button>
     <button id="d2Fullscreen" class="icon" title="Fullscreen">⛶</button>
     <button id="d2Share" class="icon" title="Copy map view link">↗</button>`;
   if(actions) actions.prepend(tools); else nav.after(tools);
 
-  const searchInput=$('d2LocationSearch');
-  const searchBtn=$('d2SearchBtn');
   const fullscreenBtn=$('d2Fullscreen');
   const shareBtn=$('d2Share');
 
@@ -3237,41 +3232,6 @@ setInterval(tick, 3000);
     ov.classList.add('show');
     return true;
   }
-
-  async function searchLocation(){
-    const q=searchInput.value.trim();
-    if(!q){ if(typeof toast==='function') toast('Enter a city, ZIP code, or place.'); return; }
-    try{
-      searchBtn.textContent='…';
-      const url='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=6&addressdetails=1&q='+encodeURIComponent(q);
-      const r=await fetch(url,{headers:{'Accept':'application/json'}});
-      if(!r.ok) throw new Error('Search failed');
-      const data=await r.json();
-      if(!data.length){
-        if(typeof toast==='function') toast('Location not found.');
-        return;
-      }
-      const html=data.map((x,i)=>`<div class="d2-search-result" data-search-index="${i}"><b>${safe(x.display_name.split(',').slice(0,2).join(','))}</b><span>${safe(x.display_name)}</span></div>`).join('');
-      if(nextModal('LOCATION SEARCH',`<div class="d2-count">${data.length} matches</div><div class="d2-search-results">${html}</div>`)){
-        const body=document.querySelector('#d2ModalBody');
-        $$('.d2-search-result',body).forEach(el=>el.onclick=()=>{
-          const x=data[Number(el.dataset.searchIndex)];
-          map.flyTo([Number(x.lat),Number(x.lon)],8,{duration:1.2});
-          document.querySelector('.d2-overlay')?.classList.remove('show');
-          searchInput.value=x.display_name.split(',')[0];
-          updateConditions();
-        });
-      }else{
-        const x=data[0];
-        map.flyTo([Number(x.lat),Number(x.lon)],8,{duration:1.2});
-      }
-    }catch(e){
-      console.error(e);
-      if(typeof toast==='function') toast('Location search unavailable right now.');
-    }finally{ searchBtn.textContent='⌕'; }
-  }
-  searchBtn.onclick=searchLocation;
-  searchInput.addEventListener('keydown',e=>{if(e.key==='Enter')searchLocation()});
 
   fullscreenBtn.onclick=()=>{
     const root=document.documentElement;
