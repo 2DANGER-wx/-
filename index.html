@@ -2378,7 +2378,7 @@ setInterval(
   // Overlays.
   const overlay=document.createElement('div');
   overlay.className='d2-overlay';
-  overlay.innerHTML=`<div class="d2-modal"><div class="d2-modal-head"><b id="d2ModalTitle">2DANGER</b><button id="d2CloseModal">Close</button></div><div class="d2-modal-body" id="d2ModalBody"></div></div></div>`;
+  overlay.innerHTML=`<div class="d2-modal"><div class="d2-modal-head"><b id="d2ModalTitle">2DANGER</b><button id="d2CloseModal" class="d2-window-btn close" title="Close" aria-label="Close">×</button></div><div class="d2-modal-body" id="d2ModalBody"></div></div></div>`;
   qs('#workspace')?.appendChild(overlay);
   const modalTitle=$('d2ModalTitle'), modalBody=$('d2ModalBody');
   $('d2CloseModal').onclick=()=>overlay.classList.remove('show');
@@ -2407,7 +2407,7 @@ setInterval(
         <button id="d2ProfilePage" style="width:100%;margin-bottom:6px">PROFILE</button><button id="d2Settings" style="width:100%;margin-bottom:6px">SETTINGS / FREE PRO</button><button id="d2SignOut" style="width:100%">SIGN OUT</button>`;
       $('d2ProfilePage').onclick=()=>showProfile();
       $('d2Settings').onclick=()=>showSettings();
-      $('d2SignOut').onclick=()=>{localStorage.removeItem(LS);renderProfileMenu();updateAvatar();updateSettingsLock();updateSettingsLock();toast('Signed out.');};
+      $('d2SignOut').onclick=()=>{localStorage.removeItem(LS);renderProfileMenu();updateAvatar();updateSettingsLock();toast('Signed out.');};
     }
   }
   function updateAvatar(){const p=profile();avatar.textContent=p?initials(p.display||p.username):'?';}
@@ -2568,23 +2568,20 @@ setInterval(
     alertLayerGroup.clearLayers();tornadoLayerGroup.clearLayers();
     activeAlerts.slice(0,120).forEach(f=>{
       const g=f.geometry;if(!g)return;
-      let layer;
       const color=/TORNADO/i.test(f.properties?.event||'')?'#ff4df0':/SEVERE THUNDERSTORM/i.test(f.properties?.event||'')?'#ff173f':'#00aaff';
       const style={color,weight:2,fillColor:color,fillOpacity:.10};
-      if(g.type==='Polygon') layer=L.polygon(g.coordinates.map(r=>r.map(p=>[p[1],p[0]])),style);
-      if(g.type==='MultiPolygon') layer=L.polygon(g.coordinates.flat(1).map(r=>r.map(p=>[p[1],p[0]])),style);
-      if(!layer)return;
+      const layer=L.geoJSON(g,{style});
       layer.bindTooltip(cleanText(f.properties?.event||'Weather Alert'));
       layer.on('click',()=>{const c=alertCenter(f);if(c)map.flyTo(c,8,{duration:1.1});playStormAlertSound();});
       layer.addTo(alertLayerGroup);
     });
     tornadoAlerts.forEach(f=>{
       const g=f.geometry;if(!g)return;
-      let layer;
       const style={color:'#ff4df0',weight:4,fillColor:'#ff4df0',fillOpacity:.18,className:'d2-tornado'};
-      if(g.type==='Polygon') layer=L.polygon(g.coordinates[0].map(p=>[p[1],p[0]]),style);
-      if(g.type==='MultiPolygon') layer=L.polygon(g.coordinates[0][0].map(p=>[p[1],p[0]]),style);
-      if(layer){layer.bindTooltip('TORNADO WARNING');layer.on('click',()=>{const c=alertCenter(f);if(c)map.flyTo(c,8,{duration:1.1});playStormAlertSound();});layer.addTo(tornadoLayerGroup);}
+      const layer=L.geoJSON(g,{style});
+      layer.bindTooltip('TORNADO WARNING');
+      layer.on('click',()=>{const c=alertCenter(f);if(c)map.flyTo(c,8,{duration:1.1});playStormAlertSound();});
+      layer.addTo(tornadoLayerGroup);
       const c=alertCenter(f);
       if(c){L.marker(c,{icon:L.divIcon({className:'d2-tornado-marker',html:'',iconSize:[18,18],iconAnchor:[9,9]})}).addTo(tornadoLayerGroup);}
     });
@@ -2599,7 +2596,7 @@ setInterval(
     openModal('ACTIVE ALERTS',`<div class="d2-count" style="margin-bottom:9px">${errSafe(severe.length)} severe alerts · current NWS alerts</div><div class="d2-grid">${severe.map((f,i)=>{
       const p=f.properties||{};return `<div class="d2-row" data-alert="${i}"><div><b>${cleanText(p.event||'Alert')}</b><span>${cleanText(p.headline||p.areaDesc||'')}</span></div><b>${p.severity||''}</b></div>`;
     }).join('')||'<div class="d2-count">No active severe alerts.</div>'}</div>`);
-    qsa('[data-alert]',modalBody).forEach(el=>el.onclick=()=>{const f=severe[Number(el.dataset.alert)];if(f){const c=f.geometry?.coordinates?.[0]?.[0];if(c)map.flyTo([c[1],c[0]],7,{duration:1.1});playStormAlertSound();}overlay.classList.remove('show');});
+    qsa('[data-alert]',modalBody).forEach(el=>el.onclick=()=>{const f=severe[Number(el.dataset.alert)];if(f){const c=alertCenter(f);if(c)map.flyTo(c,7,{duration:1.1});playStormAlertSound();}overlay.classList.remove('show');});
   }
   function errSafe(n){return String(n);}
 
@@ -3261,7 +3258,7 @@ setInterval(tick, 3000);
   const card=document.createElement('div');
   card.className='d2-weather-card';
   card.innerHTML=`
-    <div class="head"><div><div class="place" id="d2WxPlace">CURRENT CONDITIONS</div><div class="muted" id="d2WxUpdated">Waiting for map...</div></div><button id="d2WxClose" class="icon" title="Hide">×</button></div>
+    <div class="head"><div><div class="place" id="d2WxPlace">CURRENT CONDITIONS</div><div class="muted" id="d2WxUpdated">Waiting for map...</div></div></div>
     <div class="d2-weather-main">
       <div class="d2-weather-stat"><b id="d2WxTemp">—°</b><span>Temperature</span></div>
       <div class="d2-weather-stat"><b id="d2WxFeels">—°</b><span>Feels like</span></div>
@@ -3272,7 +3269,6 @@ setInterval(tick, 3000);
     <div class="d2-hourly" id="d2Hourly"></div>
     <div class="d2-weather-actions"><button id="d2WxRefresh">Refresh</button><button id="d2WxAlerts">Local alerts</button><button id="d2WxHide">Hide</button></div>`;
   document.querySelector('#workspace')?.appendChild(card);
-  $('d2WxClose').onclick=()=>card.style.display='none';
   $('d2WxHide').onclick=()=>card.style.display='none';
   $('d2WxRefresh').onclick=updateConditions;
   $('d2WxAlerts').onclick=async()=>{
@@ -3584,6 +3580,8 @@ setInterval(tick, 3000);
   function ensureWindow(el,title,key){
     if(!el || el.dataset.d2WindowReady==='1') return;
     el.dataset.d2WindowReady='1';
+    // The window chrome owns the single close button. Remove legacy inline close buttons.
+    el.querySelectorAll('#d2WxClose,.d2-inline-close').forEach(x=>x.remove());
     el.classList.add('d2-win','d2-draggable');
     if(key==='radar') el.classList.add('d2-radar-window');
     if(key==='timeline') el.classList.add('d2-timeline-window');
@@ -3765,6 +3763,21 @@ setInterval(tick, 3000);
   });
 
   refreshWM();
+})();
+</script>
+
+
+<script>
+(() => {
+  // Final publish-safety cleanup: prevent duplicate close buttons in window chrome/modals.
+  const dedupeCloseButtons = () => {
+    document.querySelectorAll('.d2-modal-head,.d2-windowbar').forEach(head => {
+      const buttons = [...head.querySelectorAll('button.close')];
+      buttons.slice(1).forEach(b => b.remove());
+    });
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', dedupeCloseButtons);
+  else dedupeCloseButtons();
 })();
 </script>
 
