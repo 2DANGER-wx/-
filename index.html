@@ -1,0 +1,67 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lag</title>
+<style>
+html,body {
+  margin:0;
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  background:#000;
+  color:#fff;
+  display:grid;
+  place-items:center;
+}
+body {
+  font-family:Arial,sans-serif;
+}
+#label {
+  font-size:48px;
+  font-weight:bold;
+}
+</style>
+</head>
+<body>
+<div id="label">Lag</div>
+<script>
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d");
+canvas.width = 1280;
+canvas.height = 720;
+
+const endTime = Date.now() + 5 * 60 * 1000;
+let active = true;
+
+function stress() {
+  if (!active) return;
+
+  if (Date.now() >= endTime) {
+    active = false;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+
+  for (let i = 0; i < 100; i++) {
+    ctx.fillStyle =
+      `hsl(${Math.random()*360},100%,50%)`;
+    ctx.fillRect(
+      Math.random()*1280,
+      Math.random()*720,
+      80, 80
+    );
+  }
+
+  requestAnimationFrame(stress);
+}
+
+requestAnimationFrame(stress);
+
+setTimeout(() => {
+  active = false;
+}, 5 * 60 * 1000);
+</script>
+</body>
+</html>
