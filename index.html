@@ -1,58 +1,45 @@
-
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>New Tab</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Direct — Serverless Messenger</title>
 <style>
-body {
-  background: #111;
-  color: white;
-  font-family: Arial, sans-serif;
-  display: grid;
-  place-items: center;
-  height: 100vh;
-  margin: 0;
-}
-button {
-  padding: 16px 40px;
-  font-size: 20px;
-  border: 0;
-  border-radius: 12px;
-  cursor: pointer;
-  background: #5865f2;
-  color: white;
-}
+:root{color-scheme:dark;--bg:#0b1020;--panel:#131a2d;--panel2:#1a2340;--line:#2b3656;--text:#eef2ff;--muted:#a1acc9;--accent:#8b9dff;--green:#72e6b1;--red:#ff9b9b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#182348 0,#0b1020 55%);font:15px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text);min-height:100vh;padding:24px 14px}
+main{max-width:900px;margin:0 auto}.brand{display:flex;align-items:center;gap:12px;margin:8px 0 22px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#9baaff,#7a6cff);display:grid;place-items:center;color:#10162a;font-weight:900;font-size:22px}.brand h1{font-size:22px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:14px}.panel{background:rgba(19,26,45,.94);border:1px solid var(--line);border-radius:18px;padding:18px;min-width:0}.wide{grid-column:1/-1}.heading{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px}.heading h2{font-size:16px;margin:0}.pill{font-size:12px;border:1px solid var(--line);padding:4px 8px;border-radius:99px;color:var(--muted)}.pill.ok{color:var(--green);border-color:#326c59}.pill.bad{color:var(--red);border-color:#70434c}p.help{color:var(--muted);font-size:13px;margin:0 0 12px}textarea,input{width:100%;background:#0b1122;color:var(--text);border:1px solid var(--line);border-radius:11px;padding:11px;font:13px/1.5 ui-monospace,SFMono-Regular,monospace;outline:none}textarea:focus,input:focus{border-color:var(--accent)}textarea{min-height:110px;resize:vertical}.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}button{border:1px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text);padding:10px 13px;font-weight:650;cursor:pointer}button.primary{background:var(--accent);color:#0b1020;border-color:transparent}button:disabled{opacity:.45;cursor:not-allowed}.chat{height:280px;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:12px;background:#0b1122;border:1px solid var(--line);border-radius:13px}.msg{max-width:85%;padding:10px 12px;border-radius:13px;background:#202b49;overflow-wrap:anywhere;white-space:pre-wrap}.msg.mine{align-self:flex-end;background:#39477e}.msg .time{font-size:10px;color:#c0c9e8;margin-top:4px}.system{align-self:center;font-size:12px;color:var(--muted);text-align:center}.sendrow{display:flex;gap:8px;margin-top:10px}.sendrow input{font-family:inherit;font-size:14px}.sendrow button{white-space:nowrap}.note{color:var(--muted);font-size:12px;margin-top:15px}.notice{background:#171f37;border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--muted);font-size:13px;margin-top:14px}code{color:#d6dcff}@media(max-width:680px){.layout{grid-template-columns:1fr}.wide{grid-column:auto}.panel{padding:15px}.chat{height:240px}}
 </style>
 </head>
-<body>
-<button onclick="openBlank()">Hello</button>
-
+<body><main>
+<header class="brand"><div class="logo">↗</div><div><h1>Direct Messenger</h1><p>Peer-to-peer chat · One HTML file · No message server</p></div></header>
+<div class="layout">
+<section class="panel"><div class="heading"><h2>1. Start a connection</h2><span class="pill">Person A</span></div><p class="help">Create an offer, then send the generated code to the other person using any method you choose.</p><button id="createOffer" class="primary">Create offer</button><textarea id="offerOut" placeholder="Your offer code will appear here…" aria-label="Offer code" spellcheck="false"></textarea><div class="row"><button id="copyOffer">Copy offer</button></div><p class="help" style="margin-top:16px">After they send you their answer code, paste it here.</p><textarea id="answerIn" placeholder="Paste answer code…" aria-label="Answer code" spellcheck="false"></textarea><div class="row"><button id="applyAnswer" class="primary">Connect with answer</button></div></section>
+<section class="panel"><div class="heading"><h2>2. Join a connection</h2><span class="pill">Person B</span></div><p class="help">Paste the offer code you received, create an answer, then send the answer code back to Person A.</p><textarea id="offerIn" placeholder="Paste offer code…" aria-label="Offer code received" spellcheck="false"></textarea><div class="row"><button id="createAnswer" class="primary">Create answer</button></div><textarea id="answerOut" placeholder="Your answer code will appear here…" aria-label="Answer code to send" spellcheck="false" style="margin-top:10px"></textarea><div class="row"><button id="copyAnswer">Copy answer</button></div></section>
+<section class="panel wide"><div class="heading"><h2>Messages</h2><span class="pill" id="status">Not connected</span></div><div class="chat" id="chat" aria-live="polite"><div class="system">Connect with another browser to start chatting.</div></div><form class="sendrow" id="sendForm"><input id="messageInput" placeholder="Write a message…" autocomplete="off" maxlength="4000" disabled aria-label="Message"><button class="primary" id="sendButton" disabled>Send</button></form><div class="row"><button id="disconnect">Disconnect</button><button id="clearChat">Clear chat</button></div><div class="notice"><strong>Privacy & limitations:</strong> Messages travel directly between the connected browsers using WebRTC data channels; this page does not store or relay them. The offer and answer codes are exchanged manually. A public STUN server is used to help establish connections, and some networks may require a TURN relay, which would no longer be fully serverless. Use HTTPS or localhost if your browser restricts WebRTC features.</div></section>
+</div><p class="note">Connection codes contain temporary session details. Share them only with the person you intend to connect with. This demo does not provide persistent identities, message history, or end-to-end identity verification.</p>
+</main>
 <script>
-function openBlank() {
-  const win = window.open("about:blank", "_blank");
-
-  if (!win) {
-    alert("Allow pop-ups and try again.");
-    return;
-  }
-
-  win.document.open();
-  win.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head><title>New Tab</title></head>
-    <body style="margin:0">
-      <iframe
-        src="https://www.yapper.website/"
-        style="width:100%;height:100vh;border:0"
-        allowfullscreen>
-      </iframe>
-    </body>
-    </html>
-  `);
-  win.document.close();
-}
-</script>
-</body>
-</html>
+(() => {
+ const $ = id => document.getElementById(id);
+ const status = $('status'), chat = $('chat'), input = $('messageInput'), sendButton = $('sendButton');
+ let pc = null, channel = null, isOfferer = false;
+ const rtcConfig = {iceServers:[{urls:'stun:stun.l.google.com:19302'}]};
+ function setStatus(text, kind='') { status.textContent=text; status.className='pill'+(kind?' '+kind:''); }
+ function systemMessage(text) { const el=document.createElement('div'); el.className='system'; el.textContent=text; chat.appendChild(el); chat.scrollTop=chat.scrollHeight; }
+ function addMessage(text, mine=false) { const el=document.createElement('div'); el.className='msg'+(mine?' mine':''); const body=document.createElement('div'); body.textContent=text; const time=document.createElement('div'); time.className='time'; time.textContent=new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}); el.append(body,time); chat.appendChild(el); chat.scrollTop=chat.scrollHeight; }
+ function updateChatState(connected) { input.disabled=!connected; sendButton.disabled=!connected; if(connected) setStatus('Connected','ok'); }
+ function waitIce(pc) { return new Promise((resolve,reject)=>{ if(pc.iceGatheringState==='complete') return resolve(); const timeout=setTimeout(()=>reject(new Error('ICE gathering timed out. Try again or use a different network.')),20000); const check=()=>{if(pc.iceGatheringState==='complete'){clearTimeout(timeout);pc.removeEventListener('icegatheringstatechange',check);resolve();}}; pc.addEventListener('icegatheringstatechange',check); }); }
+ function encode(desc) { return btoa(unescape(encodeURIComponent(JSON.stringify({type:desc.type,sdp:desc.sdp})))); }
+ function decode(value) { let obj; try { obj=JSON.parse(decodeURIComponent(escape(atob(value.trim())))); } catch { throw new Error('That code is invalid. Copy the entire code and try again.'); } if(!obj || !['offer','answer'].includes(obj.type) || typeof obj.sdp!=='string') throw new Error('That code is not a valid WebRTC offer or answer.'); return obj; }
+ function setupConnection() { pc=new RTCPeerConnection(rtcConfig); pc.onconnectionstatechange=()=>{if(!pc)return; if(pc.connectionState==='connected'){updateChatState(true);systemMessage('Secure peer-to-peer connection established.');} else if(['failed','disconnected','closed'].includes(pc.connectionState)){updateChatState(false);if(pc.connectionState==='failed')setStatus('Connection failed','bad');else if(pc.connectionState==='disconnected')setStatus('Disconnected','bad');}}; pc.ondatachannel=e=>{channel=e.channel;setupChannel();}; pc.oniceconnectionstatechange=()=>{if(pc && pc.iceConnectionState==='failed')setStatus('Network connection failed','bad');}; }
+ function setupChannel() { if(!channel)return; channel.onopen=()=>{updateChatState(true);systemMessage('You are connected. Messages are sent directly between browsers.');}; channel.onclose=()=>{updateChatState(false);setStatus('Channel closed','bad');}; channel.onerror=()=>systemMessage('The data channel reported an error.'); channel.onmessage=e=>addMessage(String(e.data),false); }
+ async function resetConnection() { if(channel){try{channel.close()}catch{}} if(pc){try{pc.close()}catch{}} pc=null;channel=null;updateChatState(false);setStatus('Not connected'); }
+ async function copy(id) { const val=$(id).value; if(!val){systemMessage('Nothing to copy yet.');return;} try{await navigator.clipboard.writeText(val);systemMessage('Code copied to clipboard.');}catch{ $(id).focus();$(id).select();systemMessage('Clipboard access blocked. Select the code and copy it manually.');} }
+ $('createOffer').onclick=async()=>{try{await resetConnection();isOfferer=true;setupConnection();channel=pc.createDataChannel('direct-chat',{ordered:true});setupChannel();const offer=await pc.createOffer();await pc.setLocalDescription(offer);setStatus('Preparing offer');await waitIce(pc);$('offerOut').value=encode(pc.localDescription);setStatus('Offer ready');systemMessage('Offer created. Send the offer code to Person B.');}catch(e){setStatus('Setup error','bad');systemMessage(e.message||'Could not create offer.');}};
+ $('createAnswer').onclick=async()=>{try{const offer=decode($('offerIn').value);await resetConnection();isOfferer=false;setupConnection();await pc.setRemoteDescription(offer);const answer=await pc.createAnswer();await pc.setLocalDescription(answer);setStatus('Preparing answer');await waitIce(pc);$('answerOut').value=encode(pc.localDescription);setStatus('Answer ready');systemMessage('Answer created. Send the answer code back to Person A.');}catch(e){setStatus('Setup error','bad');systemMessage(e.message||'Could not create answer.');}};
+ $('applyAnswer').onclick=async()=>{try{if(!pc||!isOfferer)throw new Error('Create an offer first in this browser.');await pc.setRemoteDescription(decode($('answerIn').value));setStatus('Connecting');systemMessage('Answer applied. Waiting for the peer connection…');}catch(e){systemMessage(e.message||'Could not apply answer.');}};
+ $('copyOffer').onclick=()=>copy('offerOut');$('copyAnswer').onclick=()=>copy('answerOut');
+ $('sendForm').addEventListener('submit',e=>{e.preventDefault();const text=input.value.trim();if(!text||!channel||channel.readyState!=='open')return;try{channel.send(text);addMessage(text,true);input.value='';input.focus();}catch{systemMessage('Message could not be sent.');}});
+ $('disconnect').onclick=async()=>{await resetConnection();systemMessage('Disconnected.');};$('clearChat').onclick=()=>{chat.replaceChildren();systemMessage('Chat cleared on this device.');};
+})();
+</script></body></html>
