@@ -4,18 +4,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lag Test</title>
+<title>Lag</title>
 <style>
-* { margin: 0; }
+* { box-sizing: border-box; }
 html, body {
+  margin: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: black;
+  background: #000;
 }
 canvas {
-  position: fixed;
-  inset: 0;
+  display: block;
   width: 100%;
   height: 100%;
 }
@@ -31,44 +31,69 @@ canvas {
 </style>
 </head>
 <body>
-<canvas id="screen"></canvas>
+<canvas id="canvas"></canvas>
 <div id="label">Lag</div>
 <script>
-const canvas = document.getElementById("screen");
+const canvas = document.querySelector("#canvas");
 const ctx = canvas.getContext("2d");
+
+let objects = [];
 let active = true;
-const start = performance.now();
-const duration = 5 * 60 * 1000;
+const LIMIT = 5000;
+const STOP_AFTER = 5 * 60 * 1000;
+const started = performance.now();
 
 function resize() {
-  canvas.width = Math.min(innerWidth * devicePixelRatio, 1600);
-  canvas.height = Math.min(innerHeight * devicePixelRatio, 1000);
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
 }
 resize();
 addEventListener("resize", resize);
 
-function render(now) {
-  if (!active || now - start >= duration) {
+function spawn(count) {
+  for (let i = 0; i < count && objects.length < LIMIT; i++) {
+    objects.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: 4 + Math.random() * 24,
+      vx: Math.random() * 8 - 4,
+      vy: Math.random() * 8 - 4,
+      hue: Math.random() * 360
+    });
+  }
+}
+
+function frame(now) {
+  if (!active || now - started >= STOP_AFTER) {
     active = false;
+    objects = [];
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     return;
   }
 
-  // Animated graphics workload.
-  for (let i = 0; i < 250; i++) {
-    ctx.fillStyle = `hsl(${Math.random()*360},100%,50%)`;
-    ctx.fillRect(
-      Math.random() * canvas.width,
-      Math.random() * canvas.height,
-      30 + Math.random() * 100,
-      30 + Math.random() * 100
-    );
+  // Add objects gradually, with a fixed upper limit.
+  spawn(100);
+
+  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (const o of objects) {
+    o.x += o.vx;
+    o.y += o.vy;
+
+    if (o.x < 0 || o.x > canvas.width) o.vx *= -1;
+    if (o.y < 0 || o.y > canvas.height) o.vy *= -1;
+
+    ctx.fillStyle = `hsl(${o.hue},100%,50%)`;
+    ctx.fillRect(o.x, o.y, o.size, o.size);
   }
 
-  requestAnimationFrame(render);
+  requestAnimationFrame(frame);
 }
 
-requestAnimationFrame(render);
+// Start immediately.
+spawn(1000);
+requestAnimationFrame(frame);
 </script>
 </body>
 </html>
